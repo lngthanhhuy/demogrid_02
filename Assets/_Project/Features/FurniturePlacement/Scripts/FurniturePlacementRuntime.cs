@@ -331,7 +331,8 @@ namespace SenCity.Features.FurniturePlacement
             PlacedFurnitureObject placedObject = SpawnPlacedObject(item, instance);
             SelectObject(placedObject);
             DestroyGhost();
-            TryAutoSaveAfterCommit();
+            if (!TryAutoSaveAfterCommit(out bool saveAttempted) && saveAttempted)
+                return;
             RequestToast($"Đã đặt {item.DisplayName}.");
         }
 
@@ -344,7 +345,8 @@ namespace SenCity.Features.FurniturePlacement
             }
 
             DestroyGhost();
-            TryAutoSaveAfterCommit();
+            if (!TryAutoSaveAfterCommit(out bool saveAttempted) && saveAttempted)
+                return;
             RequestToast("Đã cập nhật vị trí vật phẩm.");
         }
 
@@ -366,7 +368,8 @@ namespace SenCity.Features.FurniturePlacement
 
                 placedObjectsById.Remove(instance.InstanceId);
                 Destroy(placedObject.gameObject);
-                TryAutoSaveAfterCommit();
+                if (!TryAutoSaveAfterCommit(out bool saveAttempted) && saveAttempted)
+                    return;
                 RequestToast("Vật phẩm đã được đưa về Kho đồ.");
             }
         }
@@ -448,10 +451,11 @@ namespace SenCity.Features.FurniturePlacement
             ToastRequested?.Invoke(message);
         }
 
-        private bool TryAutoSaveAfterCommit()
+        private bool TryAutoSaveAfterCommit(out bool saveAttempted)
         {
+            saveAttempted = autoSaveAfterCommit && saveService != null;
             if (!autoSaveAfterCommit || saveService == null)
-                return false;
+                return true;
 
             bool saved = SaveTo(saveService);
             if (!saved)

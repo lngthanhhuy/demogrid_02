@@ -11,7 +11,7 @@ namespace SenCity.Core.Save
 
         public string SavePath => Path.Combine(Application.persistentDataPath, fileName);
 
-        public bool Save(FurnitureRoomLayoutSnapshot roomLayout, FurnitureInventorySnapshot inventory)
+        public virtual bool Save(FurnitureRoomLayoutSnapshot roomLayout, FurnitureInventorySnapshot inventory)
         {
             try
             {

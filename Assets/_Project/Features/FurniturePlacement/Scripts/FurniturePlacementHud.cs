@@ -125,7 +125,7 @@ namespace SenCity.Features.FurniturePlacement
                 rotateButton.interactable = hasPreviewSession;
 
             if (confirmButton != null)
-                confirmButton.interactable = hasSession;
+                confirmButton.interactable = hasRuntime && runtime.CanConfirmActiveSession();
 
             if (cancelButton != null)
                 cancelButton.interactable = hasSession;

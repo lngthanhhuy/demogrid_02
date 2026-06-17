@@ -20,6 +20,9 @@ namespace SenCity.Features.FurniturePlacement
 
         public PlacementSessionState State => activeSession?.State ?? PlacementSessionState.Idle;
         public PlacementSession ActiveSession => activeSession;
+        public bool CanConfirmActiveSession =>
+            activeSession != null &&
+            (activeSession.State == PlacementSessionState.RemoveConfirm || activeSession.LastValidation.IsValid);
 
         private void Awake()
         {

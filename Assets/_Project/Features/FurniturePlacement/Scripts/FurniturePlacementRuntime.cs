@@ -72,6 +72,11 @@ namespace SenCity.Features.FurniturePlacement
             return item != null && !HasActiveSession && (inventory == null || inventory.GetQuantity(item) > 0);
         }
 
+        public bool CanConfirmActiveSession()
+        {
+            return controller != null && controller.CanConfirmActiveSession;
+        }
+
         public bool CanStoreSelected()
         {
             return selectedObject != null &&

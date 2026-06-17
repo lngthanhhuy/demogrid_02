@@ -23,6 +23,7 @@ namespace SenCity.Features.FurniturePlacement
         public event Action<PlacedFurnitureObject> SelectedObjectChanged;
         public event Action<PlacementSession> SessionChanged;
         public event Action InventoryChanged;
+        public event Action<PlacedFurnitureObject> StoreConfirmationRequested;
         public event Action<string> ToastRequested;
 
         public bool HasActiveSession => controller != null && controller.ActiveSession != null;
@@ -69,6 +70,16 @@ namespace SenCity.Features.FurniturePlacement
         public bool CanBeginPlaceNew(FurnitureItemDefinition item)
         {
             return item != null && !HasActiveSession && (inventory == null || inventory.GetQuantity(item) > 0);
+        }
+
+        public bool CanStoreSelected()
+        {
+            return selectedObject != null &&
+                   !HasActiveSession &&
+                   selectedObject.Data != null &&
+                   selectedObject.Data.State != FurniturePlacementState.Locked &&
+                   selectedObject.Item != null &&
+                   selectedObject.Item.CanStore;
         }
 
         public bool BeginPlaceNew(FurnitureItemDefinition item, Vector2Int originCell)
@@ -122,6 +133,9 @@ namespace SenCity.Features.FurniturePlacement
 
         public bool Confirm()
         {
+            if (ActiveSession != null && ActiveSession.State == PlacementSessionState.RemoveConfirm)
+                return ConfirmStoreSelected();
+
             return controller.ConfirmActiveSession();
         }
 
@@ -132,13 +146,39 @@ namespace SenCity.Features.FurniturePlacement
 
         public bool StoreSelected()
         {
+            return ConfirmStoreSelected();
+        }
+
+        public bool RequestStoreSelected()
+        {
             if (selectedObject == null)
             {
                 RequestToast("No selected furniture.");
                 return false;
             }
 
-            return controller.StorePlacedFurniture(selectedObject.Data, selectedObject.Item);
+            if (HasActiveSession)
+            {
+                RequestToast("Confirm or cancel the current action first.");
+                return false;
+            }
+
+            if (!CanStoreSelected())
+            {
+                RequestToast("Cannot store this item.");
+                return false;
+            }
+
+            bool requested = controller.TryBeginStore(selectedObject.Data, selectedObject.Item);
+            if (requested)
+                StoreConfirmationRequested?.Invoke(selectedObject);
+
+            return requested;
+        }
+
+        public bool ConfirmStoreSelected()
+        {
+            return controller.ConfirmStoreActiveSession();
         }
 
         public bool SaveCurrentLayout()
@@ -236,6 +276,13 @@ namespace SenCity.Features.FurniturePlacement
             {
                 DestroyGhost();
                 SessionChanged?.Invoke(null);
+                return;
+            }
+
+            if (session.State == PlacementSessionState.RemoveConfirm)
+            {
+                DestroyGhost();
+                SessionChanged?.Invoke(session);
                 return;
             }
 

@@ -96,5 +96,84 @@ namespace SenCity.Tests.FurniturePlacement
             Assert.That(controller.TryBeginPlaceNew(item, Vector2Int.zero), Is.True);
             Assert.That(controller.ActiveSession.LastValidation.IsValid, Is.True);
         }
+
+        [Test]
+        public void StoreRequestEntersRemoveConfirmWithoutChangingFurniture()
+        {
+            SenCityGridProfile profile = factory.CreateGridProfile(columns: 4, rows: 4);
+            FurnitureItemDefinition item = factory.CreateItem("chair", width: 2, depth: 1);
+            FurniturePlacementController controller = factory.AddComponent<FurniturePlacementController>();
+            controller.Configure(profile);
+
+            var instance = new FurnitureInstanceData("chair-1", item.ItemId, Vector2Int.zero, item.Footprint);
+            Assert.That(controller.RegisterPlacedFurniture(instance), Is.True);
+
+            Assert.That(controller.TryBeginStore(instance, item), Is.True);
+
+            Assert.That(controller.State, Is.EqualTo(PlacementSessionState.RemoveConfirm));
+            Assert.That(instance.State, Is.EqualTo(FurniturePlacementState.Placed));
+        }
+
+        [Test]
+        public void CancelStoreConfirmationKeepsFurnitureReserved()
+        {
+            SenCityGridProfile profile = factory.CreateGridProfile(columns: 4, rows: 4);
+            FurnitureItemDefinition item = factory.CreateItem("chair", width: 2, depth: 1);
+            FurniturePlacementController controller = factory.AddComponent<FurniturePlacementController>();
+            controller.Configure(profile);
+
+            var instance = new FurnitureInstanceData("chair-1", item.ItemId, Vector2Int.zero, item.Footprint);
+            controller.RegisterPlacedFurniture(instance);
+            controller.TryBeginStore(instance, item);
+
+            controller.CancelActiveSession();
+
+            Assert.That(instance.State, Is.EqualTo(FurniturePlacementState.Placed));
+            Assert.That(controller.TryBeginPlaceNew(item, Vector2Int.zero), Is.True);
+            Assert.That(controller.ActiveSession.LastValidation.Failure, Is.EqualTo(PlacementValidationFailure.Overlap));
+        }
+
+        [Test]
+        public void ConfirmStoreReleasesCellsAndSetsStoredState()
+        {
+            SenCityGridProfile profile = factory.CreateGridProfile(columns: 4, rows: 4);
+            FurnitureItemDefinition item = factory.CreateItem("chair", width: 2, depth: 1);
+            FurniturePlacementController controller = factory.AddComponent<FurniturePlacementController>();
+            FurnitureInstanceData stored = null;
+            controller.Configure(profile);
+            controller.FurnitureStored += instance => stored = instance;
+
+            var instance = new FurnitureInstanceData("chair-1", item.ItemId, Vector2Int.zero, item.Footprint);
+            controller.RegisterPlacedFurniture(instance);
+            controller.TryBeginStore(instance, item);
+
+            Assert.That(controller.ConfirmStoreActiveSession(), Is.True);
+
+            Assert.That(stored, Is.SameAs(instance));
+            Assert.That(instance.State, Is.EqualTo(FurniturePlacementState.Stored));
+            Assert.That(controller.State, Is.EqualTo(PlacementSessionState.Idle));
+            Assert.That(controller.TryBeginPlaceNew(item, Vector2Int.zero), Is.True);
+            Assert.That(controller.ActiveSession.LastValidation.IsValid, Is.True);
+        }
+
+        [Test]
+        public void LockedFurnitureCannotEnterStoreConfirmation()
+        {
+            SenCityGridProfile profile = factory.CreateGridProfile(columns: 4, rows: 4);
+            FurnitureItemDefinition item = factory.CreateItem("chair", width: 2, depth: 1);
+            FurniturePlacementController controller = factory.AddComponent<FurniturePlacementController>();
+            string failureMessage = null;
+            controller.Configure(profile);
+            controller.PlacementFailed += message => failureMessage = message;
+
+            var instance = new FurnitureInstanceData("chair-1", item.ItemId, Vector2Int.zero, item.Footprint);
+            instance.SetState(FurniturePlacementState.Locked);
+            controller.RegisterPlacedFurniture(instance);
+
+            Assert.That(controller.TryBeginStore(instance, item), Is.False);
+
+            Assert.That(controller.State, Is.EqualTo(PlacementSessionState.Idle));
+            Assert.That(failureMessage, Is.EqualTo("Cannot store this item."));
+        }
     }
 }

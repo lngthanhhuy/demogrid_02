@@ -49,7 +49,7 @@ namespace SenCity.Core.Input
                 runtime.BeginMoveSelected();
 
             if (UnityEngine.Input.GetKeyDown(KeyCode.Delete) || UnityEngine.Input.GetKeyDown(KeyCode.Backspace))
-                runtime.StoreSelected();
+                runtime.RequestStoreSelected();
 
             if (UnityEngine.Input.GetKey(KeyCode.LeftControl) || UnityEngine.Input.GetKey(KeyCode.RightControl))
             {

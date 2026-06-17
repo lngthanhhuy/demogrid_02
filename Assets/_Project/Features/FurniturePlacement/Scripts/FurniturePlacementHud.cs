@@ -36,7 +36,7 @@ namespace SenCity.Features.FurniturePlacement
                 cancelButton.onClick.AddListener(() => runtime?.Cancel());
 
             if (storeButton != null)
-                storeButton.onClick.AddListener(RequestStoreSelected);
+                storeButton.onClick.AddListener(() => runtime?.RequestStoreSelected());
 
             if (saveButton != null)
                 saveButton.onClick.AddListener(() => runtime?.SaveCurrentLayout());
@@ -54,6 +54,7 @@ namespace SenCity.Features.FurniturePlacement
 
             runtime.SelectedObjectChanged += HandleSelectedObjectChanged;
             runtime.SessionChanged += HandleSessionChanged;
+            runtime.StoreConfirmationRequested += HandleStoreConfirmationRequested;
             runtime.ToastRequested += HandleToastRequested;
             RefreshButtonStates();
         }
@@ -65,6 +66,7 @@ namespace SenCity.Features.FurniturePlacement
 
             runtime.SelectedObjectChanged -= HandleSelectedObjectChanged;
             runtime.SessionChanged -= HandleSessionChanged;
+            runtime.StoreConfirmationRequested -= HandleStoreConfirmationRequested;
             runtime.ToastRequested -= HandleToastRequested;
         }
 
@@ -73,20 +75,19 @@ namespace SenCity.Features.FurniturePlacement
             runtime?.BeginPlaceNew(item, Vector2Int.zero);
         }
 
-        private void RequestStoreSelected()
+        private void HandleStoreConfirmationRequested(PlacedFurnitureObject placedObject)
         {
-            PlacedFurnitureObject selected = runtime != null ? runtime.SelectedObject : null;
-            if (selected == null)
+            if (placedObject == null)
                 return;
 
-            string itemName = selected.Item != null ? selected.Item.DisplayName : "Vật phẩm";
+            string itemName = placedObject.Item != null ? placedObject.Item.DisplayName : "Vật phẩm";
             if (confirmDialog != null)
             {
-                confirmDialog.Show($"Cất {itemName} vào Kho?", () => runtime.StoreSelected());
+                confirmDialog.Show($"Cất {itemName} vào Kho?", () => runtime.ConfirmStoreSelected(), () => runtime.Cancel());
                 return;
             }
 
-            runtime.StoreSelected();
+            runtime.ConfirmStoreSelected();
         }
 
         private void HandleSelectedObjectChanged(PlacedFurnitureObject placedObject)
@@ -112,13 +113,16 @@ namespace SenCity.Features.FurniturePlacement
         {
             bool hasRuntime = runtime != null;
             bool hasSession = hasRuntime && runtime.HasActiveSession;
+            bool hasPreviewSession = hasRuntime &&
+                                     runtime.ActiveSession != null &&
+                                     runtime.ActiveSession.State != PlacementSessionState.RemoveConfirm;
             bool hasSelection = hasRuntime && runtime.SelectedObject != null;
 
             if (moveButton != null)
                 moveButton.interactable = hasSelection && !hasSession;
 
             if (rotateButton != null)
-                rotateButton.interactable = hasSession;
+                rotateButton.interactable = hasPreviewSession;
 
             if (confirmButton != null)
                 confirmButton.interactable = hasSession;
@@ -127,7 +131,7 @@ namespace SenCity.Features.FurniturePlacement
                 cancelButton.interactable = hasSession;
 
             if (storeButton != null)
-                storeButton.interactable = hasSelection && !hasSession;
+                storeButton.interactable = hasSelection && hasRuntime && runtime.CanStoreSelected();
 
             if (saveButton != null)
                 saveButton.interactable = hasRuntime && !hasSession;

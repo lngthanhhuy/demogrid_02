@@ -1,0 +1,18 @@
+{
+    "name": "SenCity.FurniturePlacement.Editor",
+    "rootNamespace": "",
+    "references": [
+        "SenCity.Project"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

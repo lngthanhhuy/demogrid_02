@@ -16,7 +16,7 @@ This document maps the PDF requirements for the Furniture Placement MVP to the c
 | Rotation | `RotatePreviewClockwise` uses 90 degree steps and revalidates after every rotate. |
 | Selected item panel | `FurniturePlacementHud` wires selected item text, move, rotate, store, close, save, and load controls. |
 | Store to inventory | Store enters `RemoveConfirm`, uses `SenCityConfirmDialog`, releases occupied cells, destroys the placed object, and returns inventory quantity. |
-| Save/load | `FurniturePlacementSaveService` persists room layout and inventory snapshots as JSON for the prototype. |
+| Save/load | `FurniturePlacementSaveService` persists room layout and inventory snapshots as JSON for the prototype; runtime rollback restores local room and inventory state when auto-save fails after place, move, or store. |
 | Feedback | Toasts are routed through `SenCityToastPresenter`; placement failure, successful actions, and save failure have user-facing feedback paths. |
 | Catalog and asset pipeline | `FurnitureCatalogDefinition`, `SenCityFurnitureCatalog.asset`, editor catalog tools, and `AssetPipeline.md` keep code/data separate from heavy art assets. |
 
@@ -52,7 +52,7 @@ Current EditMode tests cover:
 - Store request, cancel, confirm, and locked-object rejection.
 - Inventory quantity consume/return, snapshot restore, catalog loading, and change events.
 - Save-data round trips and fallback footprint restore.
-- Auto-save success and save-failure toast behavior.
+- Auto-save success, save-failure toast behavior, and rollback coverage for place, move, and store commits.
 - Hover highlight, selection highlight, and deselect behavior.
 
 Recommended validation before merging any Issue #1 follow-up:
@@ -101,7 +101,7 @@ These points are intentionally outside the current prototype slice or need produ
 - Final SEN CITY furniture models and textures are not bundled in behavior PRs.
 - Store fade-out animation is not required for the current MVP implementation.
 - Ambiguous mobile selection from a list is a post-MVP idea in the PDF.
-- Full transactional rollback for remote save/backend failure should be implemented with the real production save service. The current prototype reports save failure and avoids success feedback, but local runtime state is already committed before the save attempt.
+- Production remote save retry/transaction semantics still need to be integrated with the real backend service. The local prototype now rolls back room layout and inventory after failed auto-save for place, move, and store commits.
 - Multiplayer/owner/room backend IDs are represented only by local prototype data fields where available; production identity should be integrated with the account/room service later.
 
 ## Definition Of Done

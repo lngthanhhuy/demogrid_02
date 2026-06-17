@@ -21,6 +21,8 @@ namespace SenCity.Features.FurniturePlacement
         private FurnitureGhostPreview activeGhost;
         private PlacedFurnitureObject selectedObject;
         private PlacedFurnitureObject hoveredObject;
+        private FurnitureRoomLayoutSnapshot pendingRollbackRoomLayout;
+        private FurnitureInventorySnapshot pendingRollbackInventory;
 
         public event Action<PlacedFurnitureObject> SelectedObjectChanged;
         public event Action<PlacementSession> SessionChanged;
@@ -166,7 +168,12 @@ namespace SenCity.Features.FurniturePlacement
             if (ActiveSession != null && ActiveSession.State == PlacementSessionState.RemoveConfirm)
                 return ConfirmStoreSelected();
 
-            return controller.ConfirmActiveSession();
+            CapturePendingRollbackSnapshot();
+            bool confirmed = controller.ConfirmActiveSession();
+            if (!confirmed)
+                ClearPendingRollbackSnapshot();
+
+            return confirmed;
         }
 
         public void Cancel()
@@ -208,7 +215,12 @@ namespace SenCity.Features.FurniturePlacement
 
         public bool ConfirmStoreSelected()
         {
-            return controller.ConfirmStoreActiveSession();
+            CapturePendingRollbackSnapshot();
+            bool confirmed = controller.ConfirmStoreActiveSession();
+            if (!confirmed)
+                ClearPendingRollbackSnapshot();
+
+            return confirmed;
         }
 
         public bool SaveCurrentLayout()
@@ -284,7 +296,9 @@ namespace SenCity.Features.FurniturePlacement
         public void RestoreRoomSnapshot(FurnitureRoomLayoutSnapshot snapshot)
         {
             ClearPlacedObjects();
-            controller.ClearRegisteredFurniture();
+            if (controller != null)
+                controller.ClearRegisteredFurniture();
+
             if (snapshot == null || inventory == null)
                 return;
 
@@ -296,7 +310,8 @@ namespace SenCity.Features.FurniturePlacement
 
                 var data = saved.ToInstance(item.Footprint);
                 SpawnPlacedObject(item, data);
-                controller.RegisterPlacedFurniture(data);
+                if (controller != null)
+                    controller.RegisterPlacedFurniture(data);
             }
         }
 
@@ -325,6 +340,7 @@ namespace SenCity.Features.FurniturePlacement
 
         private void HandleFurniturePlaced(FurnitureInstanceData instance)
         {
+            EnsurePendingRollbackSnapshot();
             if (activeGhost != null && activeGhost.TryGetComponent(out PlacedFurnitureObject _))
             {
                 // Ghosts should never be promoted directly; keep preview and real object lifecycles separate.
@@ -332,7 +348,10 @@ namespace SenCity.Features.FurniturePlacement
 
             FurnitureItemDefinition item = ActiveSession?.Item ?? inventory?.GetItem(instance.ItemId);
             if (item == null)
+            {
+                ClearPendingRollbackSnapshot();
                 return;
+            }
 
             if (inventory != null)
                 inventory.TryConsume(item);
@@ -347,6 +366,7 @@ namespace SenCity.Features.FurniturePlacement
 
         private void HandleFurnitureMoved(FurnitureInstanceData instance)
         {
+            EnsurePendingRollbackSnapshot();
             if (instance != null && placedObjectsById.TryGetValue(instance.InstanceId, out PlacedFurnitureObject placedObject))
             {
                 placedObject.ApplyPose(gridProfile);
@@ -364,6 +384,7 @@ namespace SenCity.Features.FurniturePlacement
             if (instance == null)
                 return;
 
+            EnsurePendingRollbackSnapshot();
             if (placedObjectsById.TryGetValue(instance.InstanceId, out PlacedFurnitureObject placedObject))
             {
                 if (inventory != null)
@@ -376,10 +397,14 @@ namespace SenCity.Features.FurniturePlacement
                     HoverObject(null);
 
                 placedObjectsById.Remove(instance.InstanceId);
-                Destroy(placedObject.gameObject);
+                DestroyRuntimeObject(placedObject.gameObject);
                 if (!TryAutoSaveAfterCommit(out bool saveAttempted) && saveAttempted)
                     return;
                 RequestToast("Vật phẩm đã được đưa về Kho đồ.");
+            }
+            else
+            {
+                ClearPendingRollbackSnapshot();
             }
         }
 
@@ -432,7 +457,7 @@ namespace SenCity.Features.FurniturePlacement
             if (activeGhost == null)
                 return;
 
-            Destroy(activeGhost.gameObject);
+            DestroyRuntimeObject(activeGhost.gameObject);
             activeGhost = null;
         }
 
@@ -442,11 +467,22 @@ namespace SenCity.Features.FurniturePlacement
             foreach (PlacedFurnitureObject placedObject in placedObjectsById.Values)
             {
                 if (placedObject != null)
-                    Destroy(placedObject.gameObject);
+                    DestroyRuntimeObject(placedObject.gameObject);
             }
 
             placedObjectsById.Clear();
             SelectObject(null);
+        }
+
+        private static void DestroyRuntimeObject(GameObject target)
+        {
+            if (target == null)
+                return;
+
+            if (Application.isPlaying)
+                Destroy(target);
+            else
+                DestroyImmediate(target);
         }
 
         private static void SetCollidersEnabled(GameObject root, bool enabled)
@@ -460,15 +496,60 @@ namespace SenCity.Features.FurniturePlacement
             ToastRequested?.Invoke(message);
         }
 
+        private void CapturePendingRollbackSnapshot()
+        {
+            ClearPendingRollbackSnapshot();
+            if (!autoSaveAfterCommit || saveService == null)
+                return;
+
+            pendingRollbackRoomLayout = CaptureRoomSnapshot();
+            pendingRollbackInventory = inventory != null
+                ? inventory.CaptureSnapshot()
+                : new FurnitureInventorySnapshot();
+        }
+
+        private void EnsurePendingRollbackSnapshot()
+        {
+            if (pendingRollbackRoomLayout != null || pendingRollbackInventory != null)
+                return;
+
+            CapturePendingRollbackSnapshot();
+        }
+
+        private void RestorePendingRollbackSnapshot()
+        {
+            if (pendingRollbackInventory != null && inventory != null)
+                inventory.ApplySnapshot(pendingRollbackInventory);
+
+            RestoreRoomSnapshot(pendingRollbackRoomLayout ?? new FurnitureRoomLayoutSnapshot());
+            ClearPendingRollbackSnapshot();
+        }
+
+        private void ClearPendingRollbackSnapshot()
+        {
+            pendingRollbackRoomLayout = null;
+            pendingRollbackInventory = null;
+        }
+
         private bool TryAutoSaveAfterCommit(out bool saveAttempted)
         {
             saveAttempted = autoSaveAfterCommit && saveService != null;
             if (!autoSaveAfterCommit || saveService == null)
+            {
+                ClearPendingRollbackSnapshot();
                 return true;
+            }
 
             bool saved = SaveTo(saveService);
             if (!saved)
+            {
                 RequestToast("Unable to save room layout.");
+                RestorePendingRollbackSnapshot();
+            }
+            else
+            {
+                ClearPendingRollbackSnapshot();
+            }
 
             return saved;
         }

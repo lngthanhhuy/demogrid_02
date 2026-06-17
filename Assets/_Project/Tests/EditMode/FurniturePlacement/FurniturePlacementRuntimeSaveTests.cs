@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using NUnit.Framework;
@@ -52,6 +53,25 @@ namespace SenCity.Tests.FurniturePlacement
             Assert.That(payload.inventory.items[0].quantity, Is.EqualTo(1));
         }
 
+        [Test]
+        public void AutoSaveFailureShowsFailureToastWithoutSuccessToast()
+        {
+            FurnitureItemDefinition chair = factory.CreateItem("chair", quantity: 2);
+            FurnitureInventoryRuntime inventory = factory.AddComponent<FurnitureInventoryRuntime>();
+            FailingSaveService saveService = factory.AddComponent<FailingSaveService>();
+            FurniturePlacementRuntime runtime = factory.AddComponent<FurniturePlacementRuntime>();
+            var toasts = new List<string>();
+
+            ConfigureInventory(inventory, chair);
+            ConfigureRuntime(runtime, inventory, saveService);
+            runtime.ToastRequested += toasts.Add;
+
+            var instance = new FurnitureInstanceData("chair-1", chair.ItemId, Vector2Int.zero, chair.Footprint);
+            InvokePrivate(runtime, "HandleFurniturePlaced", instance);
+
+            Assert.That(toasts, Is.EqualTo(new[] { "Unable to save room layout." }));
+        }
+
         private static void ConfigureInventory(FurnitureInventoryRuntime inventory, FurnitureItemDefinition item)
         {
             SerializedObject serialized = new SerializedObject(inventory);
@@ -87,6 +107,14 @@ namespace SenCity.Tests.FurniturePlacement
             MethodInfo method = typeof(FurniturePlacementRuntime).GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(method, Is.Not.Null);
             method.Invoke(runtime, new object[] { instance });
+        }
+
+        private sealed class FailingSaveService : FurniturePlacementSaveService
+        {
+            public override bool Save(FurnitureRoomLayoutSnapshot roomLayout, FurnitureInventorySnapshot inventory)
+            {
+                return false;
+            }
         }
     }
 }

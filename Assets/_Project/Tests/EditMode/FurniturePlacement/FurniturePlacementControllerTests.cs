@@ -43,6 +43,25 @@ namespace SenCity.Tests.FurniturePlacement
         }
 
         [Test]
+        public void DoubleConfirmNewPlacementDoesNotCreateDuplicateInstance()
+        {
+            SenCityGridProfile profile = factory.CreateGridProfile(columns: 4, rows: 4);
+            FurnitureItemDefinition item = factory.CreateItem("chair", width: 2, depth: 1);
+            FurniturePlacementController controller = factory.AddComponent<FurniturePlacementController>();
+            int placedCount = 0;
+            controller.Configure(profile);
+            controller.FurniturePlaced += _ => placedCount++;
+
+            Assert.That(controller.TryBeginPlaceNew(item, Vector2Int.zero), Is.True);
+
+            Assert.That(controller.ConfirmActiveSession(), Is.True);
+            Assert.That(controller.ConfirmActiveSession(), Is.False);
+
+            Assert.That(placedCount, Is.EqualTo(1));
+            Assert.That(controller.State, Is.EqualTo(PlacementSessionState.Idle));
+        }
+
+        [Test]
         public void OverlappingNewPlacementFailsAfterFirstItemIsConfirmed()
         {
             SenCityGridProfile profile = factory.CreateGridProfile(columns: 4, rows: 4);

@@ -1,0 +1,21 @@
+{
+    "name": "SenCity.FurniturePlacement.EditModeTests",
+    "rootNamespace": "SenCity.Tests.FurniturePlacement",
+    "references": [
+        "SenCity.Project"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false,
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}

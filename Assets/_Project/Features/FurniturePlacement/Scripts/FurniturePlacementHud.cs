@@ -14,6 +14,7 @@ namespace SenCity.Features.FurniturePlacement
         [SerializeField] private Button confirmButton;
         [SerializeField] private Button cancelButton;
         [SerializeField] private Button storeButton;
+        [SerializeField] private Button closeButton;
         [SerializeField] private Button saveButton;
         [SerializeField] private Button loadButton;
         [SerializeField] private Text selectedItemNameText;
@@ -37,6 +38,9 @@ namespace SenCity.Features.FurniturePlacement
 
             if (storeButton != null)
                 storeButton.onClick.AddListener(() => runtime?.RequestStoreSelected());
+
+            if (closeButton != null)
+                closeButton.onClick.AddListener(() => runtime?.DeselectSelected());
 
             if (saveButton != null)
                 saveButton.onClick.AddListener(() => runtime?.SaveCurrentLayout());
@@ -132,6 +136,9 @@ namespace SenCity.Features.FurniturePlacement
 
             if (storeButton != null)
                 storeButton.interactable = hasSelection && hasRuntime && runtime.CanStoreSelected();
+
+            if (closeButton != null)
+                closeButton.interactable = hasSelection && !hasSession;
 
             if (saveButton != null)
                 saveButton.interactable = hasRuntime && !hasSession;

@@ -35,6 +35,9 @@ namespace SenCity.Features.FurniturePlacement
         public bool TryBeginPlaceNew(FurnitureItemDefinition item, Vector2Int originCell)
         {
             InitializeIfNeeded();
+            if (!HasPlacementGrid())
+                return Fail("Missing placement grid.");
+
             if (!CanStartSession())
                 return Fail("A placement session is already active.");
 
@@ -50,6 +53,9 @@ namespace SenCity.Features.FurniturePlacement
         public bool TryBeginMoveExisting(FurnitureInstanceData instance, FurnitureItemDefinition item)
         {
             InitializeIfNeeded();
+            if (!HasPlacementGrid())
+                return Fail("Missing placement grid.");
+
             if (!CanStartSession())
                 return Fail("A placement session is already active.");
 
@@ -115,6 +121,9 @@ namespace SenCity.Features.FurniturePlacement
         public bool StorePlacedFurniture(FurnitureInstanceData instance, FurnitureItemDefinition item)
         {
             InitializeIfNeeded();
+            if (!HasPlacementGrid())
+                return Fail("Missing placement grid.");
+
             if (instance == null || item == null)
                 return Fail("Missing placed furniture data.");
 
@@ -130,7 +139,7 @@ namespace SenCity.Features.FurniturePlacement
         public bool RegisterPlacedFurniture(FurnitureInstanceData instance)
         {
             InitializeIfNeeded();
-            if (instance == null)
+            if (instance == null || !HasPlacementGrid())
                 return false;
 
             occupancyMap.Reserve(instance.InstanceId, instance.OriginCell, instance.Footprint, instance.RotationDegrees);
@@ -173,6 +182,14 @@ namespace SenCity.Features.FurniturePlacement
             if (activeSession == null)
                 return;
 
+            if (!HasPlacementGrid())
+            {
+                activeSession.ApplyValidation(PlacementValidationResult.Invalid(
+                    PlacementValidationFailure.MissingGrid,
+                    "Missing placement grid."));
+                return;
+            }
+
             PlacementValidationResult result = validator.Validate(
                 activeSession.Item,
                 activeSession.OriginCell,
@@ -196,6 +213,11 @@ namespace SenCity.Features.FurniturePlacement
         private bool CanStartSession()
         {
             return activeSession == null || activeSession.State == PlacementSessionState.Idle;
+        }
+
+        private bool HasPlacementGrid()
+        {
+            return gridProfile != null && occupancyMap != null && validator != null;
         }
 
         private bool Fail(string message)

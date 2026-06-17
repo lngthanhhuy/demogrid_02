@@ -9,16 +9,22 @@ namespace SenCity.Features.FurniturePlacement
         [SerializeField] private FurniturePlacementRuntime runtime;
         [SerializeField] private SenCityToastPresenter toastPresenter;
         [SerializeField] private SenCityConfirmDialog confirmDialog;
+        [SerializeField] private Button moveButton;
         [SerializeField] private Button rotateButton;
         [SerializeField] private Button confirmButton;
         [SerializeField] private Button cancelButton;
         [SerializeField] private Button storeButton;
+        [SerializeField] private Button saveButton;
+        [SerializeField] private Button loadButton;
         [SerializeField] private Text selectedItemNameText;
 
         private void Awake()
         {
             if (runtime == null)
                 runtime = FindAnyObjectByType<FurniturePlacementRuntime>();
+
+            if (moveButton != null)
+                moveButton.onClick.AddListener(() => runtime?.BeginMoveSelected());
 
             if (rotateButton != null)
                 rotateButton.onClick.AddListener(() => runtime?.RotatePreview());
@@ -31,6 +37,14 @@ namespace SenCity.Features.FurniturePlacement
 
             if (storeButton != null)
                 storeButton.onClick.AddListener(RequestStoreSelected);
+
+            if (saveButton != null)
+                saveButton.onClick.AddListener(() => runtime?.SaveCurrentLayout());
+
+            if (loadButton != null)
+                loadButton.onClick.AddListener(() => runtime?.LoadSavedLayout());
+
+            RefreshButtonStates();
         }
 
         private void OnEnable()
@@ -39,7 +53,9 @@ namespace SenCity.Features.FurniturePlacement
                 return;
 
             runtime.SelectedObjectChanged += HandleSelectedObjectChanged;
+            runtime.SessionChanged += HandleSessionChanged;
             runtime.ToastRequested += HandleToastRequested;
+            RefreshButtonStates();
         }
 
         private void OnDisable()
@@ -48,6 +64,7 @@ namespace SenCity.Features.FurniturePlacement
                 return;
 
             runtime.SelectedObjectChanged -= HandleSelectedObjectChanged;
+            runtime.SessionChanged -= HandleSessionChanged;
             runtime.ToastRequested -= HandleToastRequested;
         }
 
@@ -76,12 +93,47 @@ namespace SenCity.Features.FurniturePlacement
         {
             if (selectedItemNameText != null)
                 selectedItemNameText.text = placedObject != null && placedObject.Item != null ? placedObject.Item.DisplayName : string.Empty;
+
+            RefreshButtonStates();
+        }
+
+        private void HandleSessionChanged(PlacementSession session)
+        {
+            RefreshButtonStates();
         }
 
         private void HandleToastRequested(string message)
         {
             if (toastPresenter != null)
                 toastPresenter.Show(message);
+        }
+
+        private void RefreshButtonStates()
+        {
+            bool hasRuntime = runtime != null;
+            bool hasSession = hasRuntime && runtime.HasActiveSession;
+            bool hasSelection = hasRuntime && runtime.SelectedObject != null;
+
+            if (moveButton != null)
+                moveButton.interactable = hasSelection && !hasSession;
+
+            if (rotateButton != null)
+                rotateButton.interactable = hasSession;
+
+            if (confirmButton != null)
+                confirmButton.interactable = hasSession;
+
+            if (cancelButton != null)
+                cancelButton.interactable = hasSession;
+
+            if (storeButton != null)
+                storeButton.interactable = hasSelection && !hasSession;
+
+            if (saveButton != null)
+                saveButton.interactable = hasRuntime && !hasSession;
+
+            if (loadButton != null)
+                loadButton.interactable = hasRuntime && !hasSession;
         }
     }
 }

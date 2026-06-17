@@ -11,6 +11,7 @@ namespace SenCity.Features.FurniturePlacement
     {
         [SerializeField] private FurniturePlacementController controller;
         [SerializeField] private FurnitureInventoryRuntime inventory;
+        [SerializeField] private FurniturePlacementSaveService saveService;
         [SerializeField] private SenCityGridProfile gridProfile;
         [SerializeField] private Transform placedRoot;
         [SerializeField] private Transform previewRoot;
@@ -20,6 +21,7 @@ namespace SenCity.Features.FurniturePlacement
         private PlacedFurnitureObject selectedObject;
 
         public event Action<PlacedFurnitureObject> SelectedObjectChanged;
+        public event Action<PlacementSession> SessionChanged;
         public event Action<string> ToastRequested;
 
         public bool HasActiveSession => controller != null && controller.ActiveSession != null;
@@ -33,6 +35,9 @@ namespace SenCity.Features.FurniturePlacement
 
             if (inventory == null)
                 inventory = FindAnyObjectByType<FurnitureInventoryRuntime>();
+
+            if (saveService == null)
+                saveService = FindAnyObjectByType<FurniturePlacementSaveService>();
 
             controller.Configure(gridProfile);
             controller.SessionChanged += HandleSessionChanged;
@@ -75,7 +80,16 @@ namespace SenCity.Features.FurniturePlacement
 
         public void SelectObject(PlacedFurnitureObject placedObject)
         {
+            if (selectedObject == placedObject)
+                return;
+
+            if (selectedObject != null)
+                selectedObject.SetSelected(false);
+
             selectedObject = placedObject;
+            if (selectedObject != null)
+                selectedObject.SetSelected(true);
+
             SelectedObjectChanged?.Invoke(selectedObject);
         }
 
@@ -102,9 +116,38 @@ namespace SenCity.Features.FurniturePlacement
         public bool StoreSelected()
         {
             if (selectedObject == null)
+            {
+                RequestToast("No selected furniture.");
                 return false;
+            }
 
             return controller.StorePlacedFurniture(selectedObject.Data, selectedObject.Item);
+        }
+
+        public bool SaveCurrentLayout()
+        {
+            if (HasActiveSession)
+            {
+                RequestToast("Confirm or cancel placement before saving.");
+                return false;
+            }
+
+            bool saved = SaveTo(saveService);
+            RequestToast(saved ? "Room layout saved." : "Unable to save room layout.");
+            return saved;
+        }
+
+        public bool LoadSavedLayout()
+        {
+            if (HasActiveSession)
+            {
+                RequestToast("Confirm or cancel placement before loading.");
+                return false;
+            }
+
+            bool loaded = LoadFrom(saveService);
+            RequestToast(loaded ? "Room layout loaded." : "No saved room layout found.");
+            return loaded;
         }
 
         public bool TryWorldToCell(Vector3 worldPosition, out Vector2Int cell)
@@ -154,6 +197,7 @@ namespace SenCity.Features.FurniturePlacement
         public void RestoreRoomSnapshot(FurnitureRoomLayoutSnapshot snapshot)
         {
             ClearPlacedObjects();
+            controller.ClearRegisteredFurniture();
             if (snapshot == null || inventory == null)
                 return;
 
@@ -174,12 +218,14 @@ namespace SenCity.Features.FurniturePlacement
             if (session == null)
             {
                 DestroyGhost();
+                SessionChanged?.Invoke(null);
                 return;
             }
 
             EnsureGhost(session.Item);
             activeGhost.SetPose(gridProfile, session.OriginCell, session.Item.Footprint, session.RotationDegrees);
             activeGhost.SetValidity(session.LastValidation.IsValid);
+            SessionChanged?.Invoke(session);
         }
 
         private void HandleFurniturePlaced(FurnitureInstanceData instance)
@@ -196,7 +242,8 @@ namespace SenCity.Features.FurniturePlacement
             if (inventory != null)
                 inventory.TryConsume(item);
 
-            SpawnPlacedObject(item, instance);
+            PlacedFurnitureObject placedObject = SpawnPlacedObject(item, instance);
+            SelectObject(placedObject);
             DestroyGhost();
             RequestToast($"Đã đặt {item.DisplayName}.");
         }
@@ -204,7 +251,10 @@ namespace SenCity.Features.FurniturePlacement
         private void HandleFurnitureMoved(FurnitureInstanceData instance)
         {
             if (instance != null && placedObjectsById.TryGetValue(instance.InstanceId, out PlacedFurnitureObject placedObject))
+            {
                 placedObject.ApplyPose(gridProfile);
+                SelectObject(placedObject);
+            }
 
             DestroyGhost();
             RequestToast("Đã cập nhật vị trí vật phẩm.");

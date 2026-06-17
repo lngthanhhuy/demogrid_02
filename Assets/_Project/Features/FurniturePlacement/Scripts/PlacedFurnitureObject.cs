@@ -9,6 +9,7 @@ namespace SenCity.Features.FurniturePlacement
         [SerializeField] private string instanceId;
 
         private FurnitureInstanceData data;
+        private FurnitureSelectionHighlight selectionHighlight;
 
         public FurnitureItemDefinition Item => item;
         public FurnitureInstanceData Data => data;
@@ -19,7 +20,15 @@ namespace SenCity.Features.FurniturePlacement
             this.item = item;
             this.data = data;
             instanceId = data?.InstanceId;
+            EnsureSelectionHighlight();
+            SetSelected(false);
             ApplyPose(gridProfile);
+        }
+
+        public void SetSelected(bool selected)
+        {
+            EnsureSelectionHighlight();
+            selectionHighlight.SetSelected(selected);
         }
 
         public void ApplyPose(SenCityGridProfile gridProfile)
@@ -29,6 +38,16 @@ namespace SenCity.Features.FurniturePlacement
 
             transform.position = gridProfile.FootprintCenter(data.OriginCell, data.Footprint, data.RotationDegrees);
             transform.rotation = Quaternion.Euler(0f, GridFootprint.NormalizeRotation(data.RotationDegrees), 0f);
+        }
+
+        private void EnsureSelectionHighlight()
+        {
+            if (selectionHighlight != null)
+                return;
+
+            selectionHighlight = GetComponent<FurnitureSelectionHighlight>();
+            if (selectionHighlight == null)
+                selectionHighlight = gameObject.AddComponent<FurnitureSelectionHighlight>();
         }
     }
 }

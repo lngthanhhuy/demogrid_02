@@ -120,6 +120,53 @@ namespace SenCity.Tests.FurniturePlacement
             Assert.That(inventory.GetQuantity(chair), Is.Zero);
         }
 
+        [Test]
+        public void MoveAutoSaveFailureRestoresPreviousCellAndInventory()
+        {
+            SenCityGridProfile gridProfile = factory.CreateGridProfile(columns: 4, rows: 4);
+            FurnitureItemDefinition chair = factory.CreateItem("chair", quantity: 0);
+            FurnitureInventoryRuntime inventory = factory.AddComponent<FurnitureInventoryRuntime>();
+            FailingSaveService saveService = factory.AddComponent<FailingSaveService>();
+            FurniturePlacementController controller = factory.AddComponent<FurniturePlacementController>();
+            FurniturePlacementRuntime runtime = factory.AddComponent<FurniturePlacementRuntime>();
+            var toasts = new List<string>();
+
+            ConfigureInventory(inventory, chair);
+            controller.Configure(gridProfile);
+            ConfigureRuntime(runtime, inventory, saveService, controller, gridProfile);
+            InvokePrivate(runtime, "Awake");
+            runtime.RestoreRoomSnapshot(new FurnitureRoomLayoutSnapshot(new List<FurnitureInstanceSaveData>
+            {
+                new FurnitureInstanceSaveData
+                {
+                    instanceId = "chair-1",
+                    itemId = chair.ItemId,
+                    cellX = 0,
+                    cellY = 0,
+                    rotationDegrees = 0,
+                    footprintWidth = chair.Footprint.Width,
+                    footprintDepth = chair.Footprint.Depth,
+                    state = FurniturePlacementState.Placed
+                }
+            }));
+            PlacedFurnitureObject placedObject = Object.FindAnyObjectByType<PlacedFurnitureObject>();
+            Assert.That(placedObject, Is.Not.Null);
+            runtime.SelectObject(placedObject);
+            runtime.ToastRequested += toasts.Add;
+
+            Assert.That(runtime.BeginMoveSelected(), Is.True);
+            runtime.MovePreview(new Vector2Int(1, 0));
+            Assert.That(runtime.Confirm(), Is.True);
+
+            FurnitureRoomLayoutSnapshot rollbackSnapshot = runtime.CaptureRoomSnapshot();
+            Assert.That(toasts, Is.EqualTo(new[] { "Unable to save room layout." }));
+            Assert.That(rollbackSnapshot.instances, Has.Count.EqualTo(1));
+            Assert.That(rollbackSnapshot.instances[0].instanceId, Is.EqualTo("chair-1"));
+            Assert.That(rollbackSnapshot.instances[0].cellX, Is.Zero);
+            Assert.That(rollbackSnapshot.instances[0].cellY, Is.Zero);
+            Assert.That(inventory.GetQuantity(chair), Is.Zero);
+        }
+
         private static void ConfigureInventory(FurnitureInventoryRuntime inventory, FurnitureItemDefinition item)
         {
             SerializedObject serialized = new SerializedObject(inventory);

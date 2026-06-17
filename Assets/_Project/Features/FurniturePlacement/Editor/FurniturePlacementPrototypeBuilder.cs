@@ -17,6 +17,7 @@ namespace SenCity.Features.FurniturePlacement.Editor
         private const string DataFolder = "Assets/_Project/Features/FurniturePlacement/Data";
         private const string SceneFolder = "Assets/_Project/Features/FurniturePlacement/Scenes";
         private const string GridProfilePath = DataFolder + "/SenCityPlacementGrid.asset";
+        private const string CatalogPath = DataFolder + "/SenCityFurnitureCatalog.asset";
         private const string ChairPath = DataFolder + "/Demo_WoodChair.asset";
         private const string TablePath = DataFolder + "/Demo_LowTable.asset";
         private const string PlanterPath = DataFolder + "/Demo_BalconyPlanter.asset";
@@ -33,6 +34,7 @@ namespace SenCity.Features.FurniturePlacement.Editor
                 EnsureFurnitureItem(TablePath, "demo_low_table", "Ban tra", FurnitureCategory.Table, 4, 3, 4),
                 EnsureFurnitureItem(PlanterPath, "demo_balcony_planter", "Chau cay ban cong", FurnitureCategory.Farming, 3, 2, 6)
             };
+            FurnitureCatalogDefinition catalog = EnsureCatalog(items);
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             scene.name = "SenCityFurniturePlacementPrototype";
@@ -40,13 +42,33 @@ namespace SenCity.Features.FurniturePlacement.Editor
             CreateLighting();
             CreateCamera();
             CreateGround(gridProfile);
-            FurniturePlacementRuntime runtime = CreateRuntime(gridProfile, items);
+            FurniturePlacementRuntime runtime = CreateRuntime(gridProfile, catalog, items);
             CreateHud(runtime, items);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log($"[FurniturePlacementPrototypeBuilder] Rebuilt prototype scene at {ScenePath}");
+        }
+
+        private static FurnitureCatalogDefinition EnsureCatalog(IReadOnlyList<FurnitureItemDefinition> items)
+        {
+            FurnitureCatalogDefinition catalog = AssetDatabase.LoadAssetAtPath<FurnitureCatalogDefinition>(CatalogPath);
+            if (catalog == null)
+            {
+                catalog = ScriptableObject.CreateInstance<FurnitureCatalogDefinition>();
+                AssetDatabase.CreateAsset(catalog, CatalogPath);
+            }
+
+            SerializedObject serialized = new SerializedObject(catalog);
+            SerializedProperty itemList = serialized.FindProperty("items");
+            itemList.arraySize = items.Count;
+            for (int i = 0; i < items.Count; i++)
+                itemList.GetArrayElementAtIndex(i).objectReferenceValue = items[i];
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(catalog);
+            return catalog;
         }
 
         private static void EnsureFolders()
@@ -148,7 +170,10 @@ namespace SenCity.Features.FurniturePlacement.Editor
             renderer.sharedMaterial = CreateMaterial("Prototype Warm Wood", new Color(0.64f, 0.42f, 0.25f));
         }
 
-        private static FurniturePlacementRuntime CreateRuntime(SenCityGridProfile gridProfile, IReadOnlyList<FurnitureItemDefinition> items)
+        private static FurniturePlacementRuntime CreateRuntime(
+            SenCityGridProfile gridProfile,
+            FurnitureCatalogDefinition catalog,
+            IReadOnlyList<FurnitureItemDefinition> items)
         {
             var root = new GameObject("Furniture Placement Runtime");
             var placedRoot = new GameObject("Placed Furniture Root").transform;
@@ -163,6 +188,7 @@ namespace SenCity.Features.FurniturePlacement.Editor
             root.AddComponent<FurniturePlacementSaveService>();
 
             SetObjectReference(controller, "gridProfile", gridProfile);
+            SetObjectReference(inventory, "catalogAsset", catalog);
             SetInventoryCatalog(inventory, items);
             SetObjectReference(runtime, "controller", controller);
             SetObjectReference(runtime, "inventory", inventory);

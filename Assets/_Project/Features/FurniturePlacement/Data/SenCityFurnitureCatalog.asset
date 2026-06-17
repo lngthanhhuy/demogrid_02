@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f653c389bbd4c64bb998e8c6b6317d8, type: 3}
+  m_Name: SenCityFurnitureCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::SenCity.Features.FurniturePlacement.FurnitureCatalogDefinition
+  items:
+  - {fileID: 11400000, guid: c01b7618a7892464aae92deb5d34883c, type: 2}
+  - {fileID: 11400000, guid: 98f3939ff428e23498012843cdf1484d, type: 2}
+  - {fileID: 11400000, guid: 9c77faf1cc1351a40b4946e0ebc3f437, type: 2}

@@ -5,12 +5,13 @@ namespace SenCity.Features.FurniturePlacement
 {
     public class FurnitureInventoryRuntime : MonoBehaviour
     {
+        [SerializeField] private FurnitureCatalogDefinition catalogAsset;
         [SerializeField] private List<FurnitureItemDefinition> catalog = new List<FurnitureItemDefinition>();
 
         private readonly Dictionary<string, FurnitureItemDefinition> itemsById = new Dictionary<string, FurnitureItemDefinition>();
         private readonly Dictionary<string, int> quantitiesByItemId = new Dictionary<string, int>();
 
-        public IReadOnlyList<FurnitureItemDefinition> Catalog => catalog;
+        public IReadOnlyList<FurnitureItemDefinition> Catalog => catalogAsset != null ? catalogAsset.Items : catalog;
 
         private void Awake()
         {
@@ -22,7 +23,7 @@ namespace SenCity.Features.FurniturePlacement
             itemsById.Clear();
             quantitiesByItemId.Clear();
 
-            foreach (FurnitureItemDefinition item in catalog)
+            foreach (FurnitureItemDefinition item in EnumerateCatalogItems())
             {
                 if (item == null || string.IsNullOrWhiteSpace(item.ItemId))
                     continue;
@@ -92,6 +93,29 @@ namespace SenCity.Features.FurniturePlacement
             {
                 if (!string.IsNullOrWhiteSpace(entry.itemId))
                     quantitiesByItemId[entry.itemId] = Mathf.Max(0, entry.quantity);
+            }
+        }
+
+        private IEnumerable<FurnitureItemDefinition> EnumerateCatalogItems()
+        {
+            var emittedIds = new HashSet<string>();
+            if (catalogAsset != null)
+            {
+                foreach (FurnitureItemDefinition item in catalogAsset.Items)
+                {
+                    if (item == null || !emittedIds.Add(item.ItemId))
+                        continue;
+
+                    yield return item;
+                }
+            }
+
+            foreach (FurnitureItemDefinition item in catalog)
+            {
+                if (item == null || !emittedIds.Add(item.ItemId))
+                    continue;
+
+                yield return item;
             }
         }
     }

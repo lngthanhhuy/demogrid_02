@@ -33,6 +33,7 @@ namespace SenCity.Tests.FurniturePlacement
 
             Assert.That(controller.TryBeginPlaceNew(item, Vector2Int.zero), Is.True);
             Assert.That(controller.ActiveSession.LastValidation.IsValid, Is.True);
+            Assert.That(controller.CanConfirmActiveSession, Is.True);
             Assert.That(controller.ConfirmActiveSession(), Is.True);
 
             Assert.That(placed, Is.Not.Null);
@@ -58,6 +59,20 @@ namespace SenCity.Tests.FurniturePlacement
             Assert.That(controller.ActiveSession.LastValidation.Failure, Is.EqualTo(PlacementValidationFailure.Overlap));
             Assert.That(controller.ConfirmActiveSession(), Is.False);
             Assert.That(failureMessage, Is.EqualTo("Cell already has furniture."));
+        }
+
+        [Test]
+        public void InvalidPreviewCannotBeConfirmedByUi()
+        {
+            SenCityGridProfile profile = factory.CreateGridProfile(columns: 4, rows: 4);
+            FurnitureItemDefinition item = factory.CreateItem("chair", width: 2, depth: 1);
+            FurniturePlacementController controller = factory.AddComponent<FurniturePlacementController>();
+            controller.Configure(profile);
+
+            Assert.That(controller.TryBeginPlaceNew(item, new Vector2Int(3, 0)), Is.True);
+
+            Assert.That(controller.ActiveSession.LastValidation.Failure, Is.EqualTo(PlacementValidationFailure.OutOfBounds));
+            Assert.That(controller.CanConfirmActiveSession, Is.False);
         }
 
         [Test]
@@ -111,6 +126,7 @@ namespace SenCity.Tests.FurniturePlacement
             Assert.That(controller.TryBeginStore(instance, item), Is.True);
 
             Assert.That(controller.State, Is.EqualTo(PlacementSessionState.RemoveConfirm));
+            Assert.That(controller.CanConfirmActiveSession, Is.True);
             Assert.That(instance.State, Is.EqualTo(FurniturePlacementState.Placed));
         }
 

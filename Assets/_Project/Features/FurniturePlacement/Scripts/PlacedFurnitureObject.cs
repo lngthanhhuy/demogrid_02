@@ -14,6 +14,8 @@ namespace SenCity.Features.FurniturePlacement
         public FurnitureItemDefinition Item => item;
         public FurnitureInstanceData Data => data;
         public string InstanceId => data?.InstanceId ?? instanceId;
+        public bool IsSelected => selectionHighlight != null && selectionHighlight.IsSelected;
+        public bool IsHovered => selectionHighlight != null && selectionHighlight.IsHovered;
 
         public void Initialize(FurnitureItemDefinition item, FurnitureInstanceData data, SenCityGridProfile gridProfile)
         {
@@ -29,6 +31,12 @@ namespace SenCity.Features.FurniturePlacement
         {
             EnsureSelectionHighlight();
             selectionHighlight.SetSelected(selected);
+        }
+
+        public void SetHovered(bool hovered)
+        {
+            EnsureSelectionHighlight();
+            selectionHighlight.SetHovered(hovered);
         }
 
         public void ApplyPose(SenCityGridProfile gridProfile)

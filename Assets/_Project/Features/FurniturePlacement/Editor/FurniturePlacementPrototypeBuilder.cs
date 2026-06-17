@@ -228,8 +228,9 @@ namespace SenCity.Features.FurniturePlacement.Editor
             SetObjectReference(hud, "confirmButton", CreateCommandButton(canvasObject.transform, "Confirm Button", "Confirm", defaultFont, new Vector2(-140f, 54f)));
             SetObjectReference(hud, "cancelButton", CreateCommandButton(canvasObject.transform, "Cancel Button", "Cancel", defaultFont, new Vector2(0f, 54f)));
             SetObjectReference(hud, "storeButton", CreateCommandButton(canvasObject.transform, "Store Button", "Store", defaultFont, new Vector2(140f, 54f)));
-            SetObjectReference(hud, "saveButton", CreateCommandButton(canvasObject.transform, "Save Button", "Save", defaultFont, new Vector2(280f, 54f)));
-            SetObjectReference(hud, "loadButton", CreateCommandButton(canvasObject.transform, "Load Button", "Load", defaultFont, new Vector2(420f, 54f)));
+            SetObjectReference(hud, "closeButton", CreateCommandButton(canvasObject.transform, "Close Selection Button", "Close", defaultFont, new Vector2(280f, 54f)));
+            SetObjectReference(hud, "saveButton", CreateCommandButton(canvasObject.transform, "Save Button", "Save", defaultFont, new Vector2(420f, 54f)));
+            SetObjectReference(hud, "loadButton", CreateCommandButton(canvasObject.transform, "Load Button", "Load", defaultFont, new Vector2(560f, 54f)));
             SetObjectReference(hud, "selectedItemNameText", CreateText(canvasObject.transform, "Selected Item Text", "No selection", defaultFont, new Vector2(180f, 28f), new Vector2(122f, 100f)));
         }
 

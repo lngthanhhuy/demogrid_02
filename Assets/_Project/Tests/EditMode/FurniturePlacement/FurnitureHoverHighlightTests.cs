@@ -46,5 +46,19 @@ namespace SenCity.Tests.FurniturePlacement
             Assert.That(secondObject.IsHovered, Is.True);
             Assert.That(runtime.HoveredObject, Is.SameAs(secondObject));
         }
+
+        [Test]
+        public void RuntimeDeselectSelectedClearsSelectedHighlight()
+        {
+            FurniturePlacementRuntime runtime = factory.AddComponent<FurniturePlacementRuntime>();
+            PlacedFurnitureObject placedObject = factory.AddComponent<PlacedFurnitureObject>();
+
+            runtime.SelectObject(placedObject);
+            bool deselected = runtime.DeselectSelected();
+
+            Assert.That(deselected, Is.True);
+            Assert.That(runtime.SelectedObject, Is.Null);
+            Assert.That(placedObject.IsSelected, Is.False);
+        }
     }
 }

@@ -129,6 +129,15 @@ namespace SenCity.Features.FurniturePlacement
             SelectedObjectChanged?.Invoke(selectedObject);
         }
 
+        public bool DeselectSelected()
+        {
+            if (HasActiveSession || selectedObject == null)
+                return false;
+
+            SelectObject(null);
+            return true;
+        }
+
         public void HoverObject(PlacedFurnitureObject placedObject)
         {
             if (hoveredObject == placedObject)

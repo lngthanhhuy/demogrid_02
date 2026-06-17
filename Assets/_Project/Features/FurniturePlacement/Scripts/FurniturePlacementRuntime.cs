@@ -19,6 +19,7 @@ namespace SenCity.Features.FurniturePlacement
         private readonly Dictionary<string, PlacedFurnitureObject> placedObjectsById = new Dictionary<string, PlacedFurnitureObject>();
         private FurnitureGhostPreview activeGhost;
         private PlacedFurnitureObject selectedObject;
+        private PlacedFurnitureObject hoveredObject;
 
         public event Action<PlacedFurnitureObject> SelectedObjectChanged;
         public event Action<PlacementSession> SessionChanged;
@@ -29,6 +30,7 @@ namespace SenCity.Features.FurniturePlacement
         public bool HasActiveSession => controller != null && controller.ActiveSession != null;
         public PlacementSession ActiveSession => controller != null ? controller.ActiveSession : null;
         public PlacedFurnitureObject SelectedObject => selectedObject;
+        public PlacedFurnitureObject HoveredObject => hoveredObject;
 
         private void Awake()
         {
@@ -124,6 +126,19 @@ namespace SenCity.Features.FurniturePlacement
                 selectedObject.SetSelected(true);
 
             SelectedObjectChanged?.Invoke(selectedObject);
+        }
+
+        public void HoverObject(PlacedFurnitureObject placedObject)
+        {
+            if (hoveredObject == placedObject)
+                return;
+
+            if (hoveredObject != null)
+                hoveredObject.SetHovered(false);
+
+            hoveredObject = placedObject;
+            if (hoveredObject != null)
+                hoveredObject.SetHovered(true);
         }
 
         public void MovePreview(Vector2Int originCell)
@@ -284,6 +299,7 @@ namespace SenCity.Features.FurniturePlacement
                 return;
             }
 
+            HoverObject(null);
             if (session.State == PlacementSessionState.RemoveConfirm)
             {
                 DestroyGhost();
@@ -341,6 +357,9 @@ namespace SenCity.Features.FurniturePlacement
 
                 if (selectedObject == placedObject)
                     SelectObject(null);
+
+                if (hoveredObject == placedObject)
+                    HoverObject(null);
 
                 placedObjectsById.Remove(instance.InstanceId);
                 Destroy(placedObject.gameObject);
@@ -403,6 +422,7 @@ namespace SenCity.Features.FurniturePlacement
 
         private void ClearPlacedObjects()
         {
+            HoverObject(null);
             foreach (PlacedFurnitureObject placedObject in placedObjectsById.Values)
             {
                 if (placedObject != null)

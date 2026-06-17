@@ -66,10 +66,13 @@ namespace SenCity.Core.Input
             if (TryGetPointerCell(out Vector2Int cell) && runtime.HasActiveSession)
                 runtime.MovePreview(cell);
 
+            PlacedFurnitureObject pointerObject = !runtime.HasActiveSession ? RaycastPlacedFurniture() : null;
+            runtime.HoverObject(pointerObject);
+
             if (UnityEngine.Input.GetMouseButtonDown(0))
             {
                 pointerDownTime = Time.time;
-                pressedObject = RaycastPlacedFurniture();
+                pressedObject = pointerObject;
                 moveStartedFromHold = false;
 
                 if (!runtime.HasActiveSession && pressedObject != null)

@@ -8,7 +8,7 @@ namespace SenCity.Features.FurniturePlacement
         [SerializeField] private Color validColor = new Color(0.18f, 0.85f, 0.45f, 0.45f);
         [SerializeField] private Color invalidColor = new Color(1f, 0.24f, 0.16f, 0.45f);
 
-        private readonly MaterialPropertyBlock propertyBlock = new MaterialPropertyBlock();
+        private MaterialPropertyBlock propertyBlock;
         private Renderer[] renderers;
 
         private void Awake()
@@ -32,6 +32,7 @@ namespace SenCity.Features.FurniturePlacement
         public void SetValidity(bool isValid)
         {
             CacheRenderers();
+            EnsurePropertyBlock();
             Color color = isValid ? validColor : invalidColor;
             foreach (Renderer previewRenderer in renderers)
             {
@@ -49,6 +50,12 @@ namespace SenCity.Features.FurniturePlacement
         {
             if (renderers == null || renderers.Length == 0)
                 renderers = GetComponentsInChildren<Renderer>(true);
+        }
+
+        private void EnsurePropertyBlock()
+        {
+            if (propertyBlock == null)
+                propertyBlock = new MaterialPropertyBlock();
         }
     }
 }

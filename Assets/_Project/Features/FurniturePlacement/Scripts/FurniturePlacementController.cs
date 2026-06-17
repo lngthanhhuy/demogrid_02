@@ -118,6 +118,39 @@ namespace SenCity.Features.FurniturePlacement
             NotifySessionChanged();
         }
 
+        public bool TryBeginStore(FurnitureInstanceData instance, FurnitureItemDefinition item)
+        {
+            InitializeIfNeeded();
+            if (!HasPlacementGrid())
+                return Fail("Missing placement grid.");
+
+            if (!CanStartSession())
+                return Fail("A placement session is already active.");
+
+            if (instance == null || item == null)
+                return Fail("Missing placed furniture data.");
+
+            if (instance.State == FurniturePlacementState.Locked || !item.CanStore)
+                return Fail("Cannot store this item.");
+
+            activeSession = new PlacementSession(
+                PlacementSessionState.RemoveConfirm,
+                item,
+                instance.OriginCell,
+                instance.RotationDegrees,
+                instance);
+            NotifySessionChanged();
+            return true;
+        }
+
+        public bool ConfirmStoreActiveSession()
+        {
+            if (activeSession == null || activeSession.State != PlacementSessionState.RemoveConfirm)
+                return Fail("No store confirmation is active.");
+
+            return CommitStoreActiveSession();
+        }
+
         public bool StorePlacedFurniture(FurnitureInstanceData instance, FurnitureItemDefinition item)
         {
             InitializeIfNeeded();
@@ -127,7 +160,7 @@ namespace SenCity.Features.FurniturePlacement
             if (instance == null || item == null)
                 return Fail("Missing placed furniture data.");
 
-            if (!item.CanStore)
+            if (instance.State == FurniturePlacementState.Locked || !item.CanStore)
                 return Fail("Cannot store this item.");
 
             occupancyMap.Release(instance.InstanceId);
@@ -179,6 +212,26 @@ namespace SenCity.Features.FurniturePlacement
 
             activeSession.SetState(PlacementSessionState.Saving);
             FurnitureMoved?.Invoke(instance);
+            activeSession = null;
+            NotifySessionChanged();
+            return true;
+        }
+
+        private bool CommitStoreActiveSession()
+        {
+            FurnitureInstanceData instance = activeSession.SourceInstance;
+            FurnitureItemDefinition item = activeSession.Item;
+
+            if (instance == null || item == null)
+                return Fail("Missing placed furniture data.");
+
+            if (instance.State == FurniturePlacementState.Locked || !item.CanStore)
+                return Fail("Cannot store this item.");
+
+            occupancyMap.Release(instance.InstanceId);
+            instance.SetState(FurniturePlacementState.Stored);
+            activeSession.SetState(PlacementSessionState.Saving);
+            FurnitureStored?.Invoke(instance);
             activeSession = null;
             NotifySessionChanged();
             return true;

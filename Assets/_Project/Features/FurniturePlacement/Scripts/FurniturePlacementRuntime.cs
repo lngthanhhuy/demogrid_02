@@ -15,6 +15,7 @@ namespace SenCity.Features.FurniturePlacement
         [SerializeField] private SenCityGridProfile gridProfile;
         [SerializeField] private Transform placedRoot;
         [SerializeField] private Transform previewRoot;
+        [SerializeField] private bool autoSaveAfterCommit = true;
 
         private readonly Dictionary<string, PlacedFurnitureObject> placedObjectsById = new Dictionary<string, PlacedFurnitureObject>();
         private FurnitureGhostPreview activeGhost;
@@ -330,6 +331,7 @@ namespace SenCity.Features.FurniturePlacement
             PlacedFurnitureObject placedObject = SpawnPlacedObject(item, instance);
             SelectObject(placedObject);
             DestroyGhost();
+            TryAutoSaveAfterCommit();
             RequestToast($"Đã đặt {item.DisplayName}.");
         }
 
@@ -342,6 +344,7 @@ namespace SenCity.Features.FurniturePlacement
             }
 
             DestroyGhost();
+            TryAutoSaveAfterCommit();
             RequestToast("Đã cập nhật vị trí vật phẩm.");
         }
 
@@ -363,6 +366,7 @@ namespace SenCity.Features.FurniturePlacement
 
                 placedObjectsById.Remove(instance.InstanceId);
                 Destroy(placedObject.gameObject);
+                TryAutoSaveAfterCommit();
                 RequestToast("Vật phẩm đã được đưa về Kho đồ.");
             }
         }
@@ -442,6 +446,18 @@ namespace SenCity.Features.FurniturePlacement
         private void RequestToast(string message)
         {
             ToastRequested?.Invoke(message);
+        }
+
+        private bool TryAutoSaveAfterCommit()
+        {
+            if (!autoSaveAfterCommit || saveService == null)
+                return false;
+
+            bool saved = SaveTo(saveService);
+            if (!saved)
+                RequestToast("Unable to save room layout.");
+
+            return saved;
         }
 
         private void HandleInventoryChanged()

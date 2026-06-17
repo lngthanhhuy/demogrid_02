@@ -70,6 +70,8 @@ namespace SenCity.Tests.FurniturePlacement
             InvokePrivate(runtime, "HandleFurniturePlaced", instance);
 
             Assert.That(toasts, Is.EqualTo(new[] { "Unable to save room layout." }));
+            Assert.That(runtime.CaptureRoomSnapshot().instances, Is.Empty);
+            Assert.That(inventory.GetQuantity(chair), Is.EqualTo(2));
         }
 
         private static void ConfigureInventory(FurnitureInventoryRuntime inventory, FurnitureItemDefinition item)

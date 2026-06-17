@@ -1,0 +1,34 @@
+using SenCity.Core.Grid;
+using UnityEngine;
+
+namespace SenCity.Features.FurniturePlacement
+{
+    public class PlacedFurnitureObject : MonoBehaviour
+    {
+        [SerializeField] private FurnitureItemDefinition item;
+        [SerializeField] private string instanceId;
+
+        private FurnitureInstanceData data;
+
+        public FurnitureItemDefinition Item => item;
+        public FurnitureInstanceData Data => data;
+        public string InstanceId => data?.InstanceId ?? instanceId;
+
+        public void Initialize(FurnitureItemDefinition item, FurnitureInstanceData data, SenCityGridProfile gridProfile)
+        {
+            this.item = item;
+            this.data = data;
+            instanceId = data?.InstanceId;
+            ApplyPose(gridProfile);
+        }
+
+        public void ApplyPose(SenCityGridProfile gridProfile)
+        {
+            if (data == null || gridProfile == null)
+                return;
+
+            transform.position = gridProfile.FootprintCenter(data.OriginCell, data.Footprint, data.RotationDegrees);
+            transform.rotation = Quaternion.Euler(0f, GridFootprint.NormalizeRotation(data.RotationDegrees), 0f);
+        }
+    }
+}

@@ -62,6 +62,27 @@ namespace SenCity.Tests.FurniturePlacement
         }
 
         [Test]
+        public void InventoryChangedIsRaisedWhenQuantitiesChange()
+        {
+            FurnitureItemDefinition chair = factory.CreateItem("chair", quantity: 1);
+            FurnitureInventoryRuntime inventory = factory.AddComponent<FurnitureInventoryRuntime>();
+            SerializedObject serialized = new SerializedObject(inventory);
+            SerializedProperty catalog = serialized.FindProperty("catalog");
+            catalog.arraySize = 1;
+            catalog.GetArrayElementAtIndex(0).objectReferenceValue = chair;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            inventory.Rebuild();
+
+            int changeCount = 0;
+            inventory.InventoryChanged += () => changeCount++;
+
+            inventory.TryConsume(chair);
+            inventory.ReturnItem(chair);
+
+            Assert.That(changeCount, Is.EqualTo(2));
+        }
+
+        [Test]
         public void SnapshotRoundTripPreservesKnownQuantities()
         {
             FurnitureItemDefinition chair = factory.CreateItem("chair", quantity: 3);

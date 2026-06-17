@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,6 +11,8 @@ namespace SenCity.Features.FurniturePlacement
 
         private readonly Dictionary<string, FurnitureItemDefinition> itemsById = new Dictionary<string, FurnitureItemDefinition>();
         private readonly Dictionary<string, int> quantitiesByItemId = new Dictionary<string, int>();
+
+        public event Action InventoryChanged;
 
         public IReadOnlyList<FurnitureItemDefinition> Catalog => catalogAsset != null ? catalogAsset.Items : catalog;
 
@@ -31,6 +34,8 @@ namespace SenCity.Features.FurniturePlacement
                 itemsById[item.ItemId] = item;
                 quantitiesByItemId[item.ItemId] = Mathf.Max(0, item.StartingQuantity);
             }
+
+            InventoryChanged?.Invoke();
         }
 
         public FurnitureItemDefinition GetItem(string itemId)
@@ -64,6 +69,7 @@ namespace SenCity.Features.FurniturePlacement
                 return false;
 
             quantitiesByItemId[item.ItemId] = quantity - 1;
+            InventoryChanged?.Invoke();
             return true;
         }
 
@@ -73,6 +79,7 @@ namespace SenCity.Features.FurniturePlacement
                 return;
 
             quantitiesByItemId[item.ItemId] = GetQuantity(item.ItemId) + 1;
+            InventoryChanged?.Invoke();
         }
 
         public FurnitureInventorySnapshot CaptureSnapshot()
@@ -94,6 +101,8 @@ namespace SenCity.Features.FurniturePlacement
                 if (!string.IsNullOrWhiteSpace(entry.itemId))
                     quantitiesByItemId[entry.itemId] = Mathf.Max(0, entry.quantity);
             }
+
+            InventoryChanged?.Invoke();
         }
 
         private IEnumerable<FurnitureItemDefinition> EnumerateCatalogItems()

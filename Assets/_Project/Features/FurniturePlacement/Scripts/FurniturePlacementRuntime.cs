@@ -22,6 +22,7 @@ namespace SenCity.Features.FurniturePlacement
 
         public event Action<PlacedFurnitureObject> SelectedObjectChanged;
         public event Action<PlacementSession> SessionChanged;
+        public event Action InventoryChanged;
         public event Action<string> ToastRequested;
 
         public bool HasActiveSession => controller != null && controller.ActiveSession != null;
@@ -45,6 +46,9 @@ namespace SenCity.Features.FurniturePlacement
             controller.FurnitureMoved += HandleFurnitureMoved;
             controller.FurnitureStored += HandleFurnitureStored;
             controller.PlacementFailed += HandlePlacementFailed;
+
+            if (inventory != null)
+                inventory.InventoryChanged += HandleInventoryChanged;
         }
 
         private void OnDestroy()
@@ -57,6 +61,14 @@ namespace SenCity.Features.FurniturePlacement
             controller.FurnitureMoved -= HandleFurnitureMoved;
             controller.FurnitureStored -= HandleFurnitureStored;
             controller.PlacementFailed -= HandlePlacementFailed;
+
+            if (inventory != null)
+                inventory.InventoryChanged -= HandleInventoryChanged;
+        }
+
+        public bool CanBeginPlaceNew(FurnitureItemDefinition item)
+        {
+            return item != null && !HasActiveSession && (inventory == null || inventory.GetQuantity(item) > 0);
         }
 
         public bool BeginPlaceNew(FurnitureItemDefinition item, Vector2Int originCell)
@@ -68,6 +80,11 @@ namespace SenCity.Features.FurniturePlacement
             }
 
             return controller.TryBeginPlaceNew(item, originCell);
+        }
+
+        public int GetInventoryQuantity(FurnitureItemDefinition item)
+        {
+            return inventory != null ? inventory.GetQuantity(item) : 0;
         }
 
         public bool BeginMoveSelected()
@@ -353,6 +370,11 @@ namespace SenCity.Features.FurniturePlacement
         private void RequestToast(string message)
         {
             ToastRequested?.Invoke(message);
+        }
+
+        private void HandleInventoryChanged()
+        {
+            InventoryChanged?.Invoke();
         }
     }
 }

@@ -185,13 +185,14 @@ namespace SenCity.Features.FurniturePlacement.Editor
             FurnitureInventoryRuntime inventory = root.AddComponent<FurnitureInventoryRuntime>();
             FurniturePlacementRuntime runtime = root.AddComponent<FurniturePlacementRuntime>();
             root.AddComponent<FurniturePlacementInputAdapter>();
-            root.AddComponent<FurniturePlacementSaveService>();
+            FurniturePlacementSaveService saveService = root.AddComponent<FurniturePlacementSaveService>();
 
             SetObjectReference(controller, "gridProfile", gridProfile);
             SetObjectReference(inventory, "catalogAsset", catalog);
             SetInventoryCatalog(inventory, items);
             SetObjectReference(runtime, "controller", controller);
             SetObjectReference(runtime, "inventory", inventory);
+            SetObjectReference(runtime, "saveService", saveService);
             SetObjectReference(runtime, "gridProfile", gridProfile);
             SetObjectReference(runtime, "placedRoot", placedRoot);
             SetObjectReference(runtime, "previewRoot", previewRoot);
@@ -222,10 +223,13 @@ namespace SenCity.Features.FurniturePlacement.Editor
             SetObjectReference(hud, "runtime", runtime);
             SetObjectReference(hud, "toastPresenter", toast);
             SetObjectReference(hud, "confirmDialog", dialog);
-            SetObjectReference(hud, "rotateButton", CreateCommandButton(canvasObject.transform, "Rotate Button", "Rotate", defaultFont, new Vector2(-210f, 54f)));
-            SetObjectReference(hud, "confirmButton", CreateCommandButton(canvasObject.transform, "Confirm Button", "Confirm", defaultFont, new Vector2(-90f, 54f)));
-            SetObjectReference(hud, "cancelButton", CreateCommandButton(canvasObject.transform, "Cancel Button", "Cancel", defaultFont, new Vector2(30f, 54f)));
-            SetObjectReference(hud, "storeButton", CreateCommandButton(canvasObject.transform, "Store Button", "Store", defaultFont, new Vector2(150f, 54f)));
+            SetObjectReference(hud, "moveButton", CreateCommandButton(canvasObject.transform, "Move Button", "Move", defaultFont, new Vector2(-420f, 54f)));
+            SetObjectReference(hud, "rotateButton", CreateCommandButton(canvasObject.transform, "Rotate Button", "Rotate", defaultFont, new Vector2(-280f, 54f)));
+            SetObjectReference(hud, "confirmButton", CreateCommandButton(canvasObject.transform, "Confirm Button", "Confirm", defaultFont, new Vector2(-140f, 54f)));
+            SetObjectReference(hud, "cancelButton", CreateCommandButton(canvasObject.transform, "Cancel Button", "Cancel", defaultFont, new Vector2(0f, 54f)));
+            SetObjectReference(hud, "storeButton", CreateCommandButton(canvasObject.transform, "Store Button", "Store", defaultFont, new Vector2(140f, 54f)));
+            SetObjectReference(hud, "saveButton", CreateCommandButton(canvasObject.transform, "Save Button", "Save", defaultFont, new Vector2(280f, 54f)));
+            SetObjectReference(hud, "loadButton", CreateCommandButton(canvasObject.transform, "Load Button", "Load", defaultFont, new Vector2(420f, 54f)));
             SetObjectReference(hud, "selectedItemNameText", CreateText(canvasObject.transform, "Selected Item Text", "No selection", defaultFont, new Vector2(180f, 28f), new Vector2(122f, 100f)));
         }
 

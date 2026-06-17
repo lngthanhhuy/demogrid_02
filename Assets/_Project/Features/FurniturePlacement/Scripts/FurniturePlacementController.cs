@@ -146,6 +146,13 @@ namespace SenCity.Features.FurniturePlacement
             return true;
         }
 
+        public void ClearRegisteredFurniture()
+        {
+            InitializeIfNeeded(force: true);
+            activeSession = null;
+            NotifySessionChanged();
+        }
+
         private bool CommitPlaceNew()
         {
             FurnitureInstanceData instance = new FurnitureInstanceData(

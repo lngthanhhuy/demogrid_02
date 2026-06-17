@@ -44,6 +44,21 @@ namespace SenCity.Core.Input
 
             if (UnityEngine.Input.GetKeyDown(KeyCode.Return))
                 runtime.Confirm();
+
+            if (UnityEngine.Input.GetKeyDown(KeyCode.M))
+                runtime.BeginMoveSelected();
+
+            if (UnityEngine.Input.GetKeyDown(KeyCode.Delete) || UnityEngine.Input.GetKeyDown(KeyCode.Backspace))
+                runtime.StoreSelected();
+
+            if (UnityEngine.Input.GetKey(KeyCode.LeftControl) || UnityEngine.Input.GetKey(KeyCode.RightControl))
+            {
+                if (UnityEngine.Input.GetKeyDown(KeyCode.S))
+                    runtime.SaveCurrentLayout();
+
+                if (UnityEngine.Input.GetKeyDown(KeyCode.L))
+                    runtime.LoadSavedLayout();
+            }
         }
 
         private void HandlePointer()
@@ -59,6 +74,8 @@ namespace SenCity.Core.Input
 
                 if (!runtime.HasActiveSession && pressedObject != null)
                     runtime.SelectObject(pressedObject);
+                else if (!runtime.HasActiveSession)
+                    runtime.SelectObject(null);
             }
 
             if (UnityEngine.Input.GetMouseButton(0) && pressedObject != null && !runtime.HasActiveSession)

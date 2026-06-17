@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using NUnit.Framework;
+using SenCity.Core.Grid;
 using SenCity.Core.Save;
 using SenCity.Features.FurniturePlacement;
 using UnityEditor;
@@ -74,6 +75,51 @@ namespace SenCity.Tests.FurniturePlacement
             Assert.That(inventory.GetQuantity(chair), Is.EqualTo(2));
         }
 
+        [Test]
+        public void StoreAutoSaveFailureRestoresRoomLayoutAndInventory()
+        {
+            SenCityGridProfile gridProfile = factory.CreateGridProfile(columns: 4, rows: 4);
+            FurnitureItemDefinition chair = factory.CreateItem("chair", quantity: 0);
+            FurnitureInventoryRuntime inventory = factory.AddComponent<FurnitureInventoryRuntime>();
+            FailingSaveService saveService = factory.AddComponent<FailingSaveService>();
+            FurniturePlacementController controller = factory.AddComponent<FurniturePlacementController>();
+            FurniturePlacementRuntime runtime = factory.AddComponent<FurniturePlacementRuntime>();
+            var toasts = new List<string>();
+
+            ConfigureInventory(inventory, chair);
+            controller.Configure(gridProfile);
+            ConfigureRuntime(runtime, inventory, saveService, controller, gridProfile);
+            InvokePrivate(runtime, "Awake");
+            runtime.RestoreRoomSnapshot(new FurnitureRoomLayoutSnapshot(new List<FurnitureInstanceSaveData>
+            {
+                new FurnitureInstanceSaveData
+                {
+                    instanceId = "chair-1",
+                    itemId = chair.ItemId,
+                    cellX = 0,
+                    cellY = 0,
+                    rotationDegrees = 0,
+                    footprintWidth = chair.Footprint.Width,
+                    footprintDepth = chair.Footprint.Depth,
+                    state = FurniturePlacementState.Placed
+                }
+            }));
+            PlacedFurnitureObject placedObject = Object.FindAnyObjectByType<PlacedFurnitureObject>();
+            Assert.That(placedObject, Is.Not.Null);
+            runtime.SelectObject(placedObject);
+            runtime.ToastRequested += toasts.Add;
+
+            Assert.That(runtime.RequestStoreSelected(), Is.True);
+            Assert.That(runtime.ConfirmStoreSelected(), Is.True);
+
+            FurnitureRoomLayoutSnapshot rollbackSnapshot = runtime.CaptureRoomSnapshot();
+            Assert.That(toasts, Is.EqualTo(new[] { "Unable to save room layout." }));
+            Assert.That(rollbackSnapshot.instances, Has.Count.EqualTo(1));
+            Assert.That(rollbackSnapshot.instances[0].instanceId, Is.EqualTo("chair-1"));
+            Assert.That(rollbackSnapshot.instances[0].state, Is.EqualTo(FurniturePlacementState.Placed));
+            Assert.That(inventory.GetQuantity(chair), Is.Zero);
+        }
+
         private static void ConfigureInventory(FurnitureInventoryRuntime inventory, FurnitureItemDefinition item)
         {
             SerializedObject serialized = new SerializedObject(inventory);
@@ -94,12 +140,15 @@ namespace SenCity.Tests.FurniturePlacement
         private static void ConfigureRuntime(
             FurniturePlacementRuntime runtime,
             FurnitureInventoryRuntime inventory,
-            FurniturePlacementSaveService saveService)
+            FurniturePlacementSaveService saveService,
+            FurniturePlacementController controller = null,
+            SenCityGridProfile gridProfile = null)
         {
             SerializedObject serialized = new SerializedObject(runtime);
+            serialized.FindProperty("controller").objectReferenceValue = controller;
             serialized.FindProperty("inventory").objectReferenceValue = inventory;
             serialized.FindProperty("saveService").objectReferenceValue = saveService;
-            serialized.FindProperty("gridProfile").objectReferenceValue = null;
+            serialized.FindProperty("gridProfile").objectReferenceValue = gridProfile;
             serialized.FindProperty("autoSaveAfterCommit").boolValue = true;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
@@ -109,6 +158,13 @@ namespace SenCity.Tests.FurniturePlacement
             MethodInfo method = typeof(FurniturePlacementRuntime).GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(method, Is.Not.Null);
             method.Invoke(runtime, new object[] { instance });
+        }
+
+        private static void InvokePrivate(FurniturePlacementRuntime runtime, string methodName)
+        {
+            MethodInfo method = typeof(FurniturePlacementRuntime).GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null);
+            method.Invoke(runtime, null);
         }
 
         private sealed class FailingSaveService : FurniturePlacementSaveService

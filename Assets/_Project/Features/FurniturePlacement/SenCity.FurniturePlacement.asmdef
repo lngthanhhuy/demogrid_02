@@ -1,13 +1,10 @@
 {
-    "name": "SenCity.FurniturePlacement.Editor",
-    "rootNamespace": "",
+    "name": "SenCity.FurniturePlacement",
+    "rootNamespace": "SenCity.Features.FurniturePlacement",
     "references": [
-        "SenCity.Core",
-        "SenCity.FurniturePlacement"
+        "SenCity.Core"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

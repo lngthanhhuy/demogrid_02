@@ -2,7 +2,9 @@
     "name": "SenCity.FurniturePlacement.EditModeTests",
     "rootNamespace": "SenCity.Tests.FurniturePlacement",
     "references": [
-        "SenCity.Project"
+        "SenCity.Core",
+        "SenCity.FurniturePlacement",
+        "SenCity.FurniturePlacement.Editor"
     ],
     "includePlatforms": [
         "Editor"

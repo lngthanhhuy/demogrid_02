@@ -1,6 +1,6 @@
 using NUnit.Framework;
 using SenCity.Core.Grid;
-using SenCity.Core.Save;
+using SenCity.Features.FurniturePlacement.Save;
 using SenCity.Features.FurniturePlacement;
 using UnityEngine;
 

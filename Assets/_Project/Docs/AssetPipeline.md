@@ -4,9 +4,10 @@ This project keeps source code, gameplay data, and heavy art assets separated so
 
 ## Folder Structure
 
-- `Assets/_Project/Core`: shared runtime systems such as grid, input, save, and UI helpers.
+- `Assets/_Project/Core`: shared runtime systems such as grid primitives and UI helpers.
 - `Assets/_Project/Shared`: reusable SEN CITY assets that are shared by more than one feature but are not low-level enough for Core.
 - `Assets/_Project/Features`: gameplay features grouped by domain.
+- `Assets/_Project/Features/FurniturePlacement/Scripts`: feature-owned runtime code, input adapters, save snapshots, and placement behavior.
 - `Assets/_Project/Features/FurniturePlacement/Data`: light YAML ScriptableObject data for furniture items, grid profiles, and catalogs.
 - `Assets/_Project/Features/FurniturePlacement/Scenes`: prototype or feature scenes used to test task slices.
 - `Assets/_Project/Art`: project-owned art source imports and prefabs when they are reviewed and ready to be versioned.

@@ -1,7 +1,7 @@
 using SenCity.Features.FurniturePlacement;
 using UnityEngine;
 
-namespace SenCity.Core.Input
+namespace SenCity.Features.FurniturePlacement.Input
 {
     public class FurniturePlacementInputAdapter : MonoBehaviour
     {

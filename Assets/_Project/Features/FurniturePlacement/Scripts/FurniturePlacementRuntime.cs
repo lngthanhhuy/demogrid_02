@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using SenCity.Core.Grid;
-using SenCity.Core.Save;
+using SenCity.Features.FurniturePlacement.Save;
 using UnityEngine;
 
 namespace SenCity.Features.FurniturePlacement

@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4df2f008f74d41258e2c619016d50cd7, type: 3}
-  m_Name: Demo_WoodChair
+  m_Name: Demo_Sofa
   m_EditorClassIdentifier: Assembly-CSharp::SenCity.Features.FurniturePlacement.FurnitureItemDefinition
-  itemId: demo_wood_chair
-  displayName: Ghe go
+  itemId: demo_sofa
+  displayName: Sofa demo
   category: 0
-  prefab: {fileID: 7483225351620237167, guid: 819250adea50b1146ac2471264aff7b9, type: 3}
+  prefab: {fileID: 966405261981606208, guid: 61e206cb1d4ad7c4697bde929a20f711, type: 3}
   icon: {fileID: 0}
   footprint:
-    width: 2
+    width: 4
     depth: 2
-  startingQuantity: 8
+  startingQuantity: 3
   canStore: 1
   lockedBySystem: 0

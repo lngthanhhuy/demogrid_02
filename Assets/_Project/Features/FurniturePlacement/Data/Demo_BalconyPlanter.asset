@@ -15,7 +15,7 @@ MonoBehaviour:
   itemId: demo_balcony_planter
   displayName: Chau cay ban cong
   category: 6
-  prefab: {fileID: 0}
+  prefab: {fileID: 3771488859045753822, guid: 45d2ce6d8a9a94c48bb684d70ab12fb1, type: 3}
   icon: {fileID: 0}
   footprint:
     width: 3

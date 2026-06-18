@@ -2,7 +2,8 @@
     "name": "SenCity.FurniturePlacement",
     "rootNamespace": "SenCity.Features.FurniturePlacement",
     "references": [
-        "SenCity.Core"
+        "SenCity.Core",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

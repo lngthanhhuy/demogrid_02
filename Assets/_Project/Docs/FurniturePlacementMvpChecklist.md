@@ -4,6 +4,16 @@ Source task: `Task dat do vat - Feature.pdf`
 
 This document maps the PDF requirements for the Furniture Placement MVP to the current SEN CITY prototype implementation. It is intended as the final review checklist for Issue #1 and as a handoff note for future art/model integration.
 
+## Closeout Status
+
+Issue #1 is ready for MVP review as of the final QA pass. The behavior scope is complete for the local SEN CITY furniture placement prototype: inventory-driven placement, grid snapping, rotation, validation, confirm/cancel, move, selected item actions, store-to-inventory, save/load, and rollback on local auto-save failure.
+
+Final QA baseline:
+
+- Unity EditMode expected coverage: 32 tests.
+- Behavior PRs intentionally exclude final `.fbx`, source textures, audio, and other heavyweight art assets.
+- Remaining work is production integration or art-content work, not blocking for the feature MVP review.
+
 ## Implementation Coverage
 
 | PDF area | Current implementation |
@@ -16,7 +26,7 @@ This document maps the PDF requirements for the Furniture Placement MVP to the c
 | Rotation | `RotatePreviewClockwise` uses 90 degree steps and revalidates after every rotate. |
 | Selected item panel | `FurniturePlacementHud` wires selected item text, move, rotate, store, close, save, and load controls. |
 | Store to inventory | Store enters `RemoveConfirm`, uses `SenCityConfirmDialog`, releases occupied cells, destroys the placed object, and returns inventory quantity. |
-| Save/load | `FurniturePlacementSaveService` persists room layout and inventory snapshots as JSON for the prototype; runtime rollback restores local room and inventory state when auto-save fails after place, move, or store. |
+| Save/load | `FurniturePlacementSaveService` persists room layout and inventory snapshots as JSON for the prototype; reload restores layout, item rotation, inventory, and controller occupancy; runtime rollback restores local room and inventory state when auto-save fails after place, move, or store. |
 | Feedback | Toasts are routed through `SenCityToastPresenter`; placement failure, successful actions, and save failure have user-facing feedback paths. |
 | Catalog and asset pipeline | `FurnitureCatalogDefinition`, `SenCityFurnitureCatalog.asset`, editor catalog tools, and `AssetPipeline.md` keep code/data separate from heavy art assets. |
 
@@ -48,10 +58,11 @@ Current EditMode tests cover:
 - Grid occupancy reserve/release behavior.
 - Placement validation for bounds, rotated footprints, and overlap.
 - New placement commit and duplicate-confirm protection.
+- Active-session guard, zero-inventory guard, and rotate-into-invalid boundary handling.
 - Move existing flow that ignores its own occupied cells.
 - Store request, cancel, confirm, and locked-object rejection.
 - Inventory quantity consume/return, snapshot restore, catalog loading, and change events.
-- Save-data round trips and fallback footprint restore.
+- Save-data round trips, fallback footprint restore, and runtime reload from a saved JSON payload.
 - Auto-save success, save-failure toast behavior, and rollback coverage for place, move, and store commits.
 - Hover highlight, selection highlight, and deselect behavior.
 
@@ -101,7 +112,7 @@ These points are intentionally outside the current prototype slice or need produ
 - Final SEN CITY furniture models and textures are not bundled in behavior PRs.
 - Store fade-out animation is not required for the current MVP implementation.
 - Ambiguous mobile selection from a list is a post-MVP idea in the PDF.
-- Production remote save retry/transaction semantics still need to be integrated with the real backend service. The local prototype now rolls back room layout and inventory after failed auto-save for place, move, and store commits.
+- Production remote save retry/transaction semantics still need to be integrated with the real backend service. The local prototype now persists and reloads JSON snapshots and rolls back room layout and inventory after failed auto-save for place, move, and store commits.
 - Multiplayer/owner/room backend IDs are represented only by local prototype data fields where available; production identity should be integrated with the account/room service later.
 
 ## Definition Of Done

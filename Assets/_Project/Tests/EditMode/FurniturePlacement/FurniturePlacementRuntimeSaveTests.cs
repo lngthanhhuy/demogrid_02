@@ -55,6 +55,57 @@ namespace SenCity.Tests.FurniturePlacement
         }
 
         [Test]
+        public void LoadFromSaveFileRestoresRoomLayoutInventoryAndOccupancy()
+        {
+            SenCityGridProfile gridProfile = factory.CreateGridProfile(columns: 4, rows: 4);
+            FurnitureItemDefinition sofa = factory.CreateItem("sofa", width: 1, depth: 2, quantity: 2);
+            FurnitureInventoryRuntime inventory = factory.AddComponent<FurnitureInventoryRuntime>();
+            FurniturePlacementSaveService saveService = factory.AddComponent<FurniturePlacementSaveService>();
+            FurniturePlacementController controller = factory.AddComponent<FurniturePlacementController>();
+            FurniturePlacementRuntime runtime = factory.AddComponent<FurniturePlacementRuntime>();
+
+            ConfigureInventory(inventory, sofa);
+            ConfigureSaveService(saveService, "sen_city_runtime_load_roundtrip_test.json");
+            ConfigureRuntime(runtime, inventory, saveService, controller, gridProfile);
+            savePath = saveService.SavePath;
+            Assert.That(saveService.Save(
+                new FurnitureRoomLayoutSnapshot(new List<FurnitureInstanceSaveData>
+                {
+                    new FurnitureInstanceSaveData
+                    {
+                        instanceId = "sofa-1",
+                        itemId = sofa.ItemId,
+                        cellX = 1,
+                        cellY = 1,
+                        rotationDegrees = 90,
+                        footprintWidth = sofa.Footprint.Width,
+                        footprintDepth = sofa.Footprint.Depth,
+                        state = FurniturePlacementState.Placed
+                    }
+                }),
+                new FurnitureInventorySnapshot(new List<FurnitureInventoryEntry>
+                {
+                    new FurnitureInventoryEntry(sofa.ItemId, 1)
+                })), Is.True);
+            InvokePrivate(runtime, "Awake");
+
+            Assert.That(runtime.LoadFrom(saveService), Is.True);
+
+            FurnitureRoomLayoutSnapshot restored = runtime.CaptureRoomSnapshot();
+            Assert.That(restored.instances, Has.Count.EqualTo(1));
+            Assert.That(restored.instances[0].instanceId, Is.EqualTo("sofa-1"));
+            Assert.That(restored.instances[0].itemId, Is.EqualTo("sofa"));
+            Assert.That(restored.instances[0].cellX, Is.EqualTo(1));
+            Assert.That(restored.instances[0].cellY, Is.EqualTo(1));
+            Assert.That(restored.instances[0].rotationDegrees, Is.EqualTo(90));
+            Assert.That(inventory.GetQuantity(sofa), Is.EqualTo(1));
+
+            Assert.That(controller.TryBeginPlaceNew(sofa, new Vector2Int(1, 1)), Is.True);
+            Assert.That(controller.ActiveSession.LastValidation.Failure, Is.EqualTo(PlacementValidationFailure.Overlap));
+            Assert.That(controller.CanConfirmActiveSession, Is.False);
+        }
+
+        [Test]
         public void AutoSaveFailureShowsFailureToastWithoutSuccessToast()
         {
             FurnitureItemDefinition chair = factory.CreateItem("chair", quantity: 2);

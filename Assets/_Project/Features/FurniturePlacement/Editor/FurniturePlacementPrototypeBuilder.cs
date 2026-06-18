@@ -21,6 +21,11 @@ namespace SenCity.Features.FurniturePlacement.Editor
         private const string ChairPath = DataFolder + "/Demo_WoodChair.asset";
         private const string TablePath = DataFolder + "/Demo_LowTable.asset";
         private const string PlanterPath = DataFolder + "/Demo_BalconyPlanter.asset";
+        private const string SofaPath = DataFolder + "/Demo_Sofa.asset";
+        private const string ChairPrefabPath = "Assets/_Project/Art/Furniture/Chair/chair.prefab";
+        private const string TablePrefabPath = "Assets/_Project/Art/Furniture/Table/table.prefab";
+        private const string PlanterPrefabPath = "Assets/_Project/Art/Furniture/Planter/plant_ver1.0.0.prefab";
+        private const string SofaPrefabPath = "Assets/_Project/Art/Furniture/Sofa/fn_sofa_scandinavian_01.prefab";
         private const string ScenePath = SceneFolder + "/SenCityFurniturePlacementPrototype.unity";
 
         [MenuItem("Tools/SEN CITY/Furniture Placement/Rebuild Prototype Scene")]
@@ -30,9 +35,10 @@ namespace SenCity.Features.FurniturePlacement.Editor
             SenCityGridProfile gridProfile = EnsureGridProfile();
             var items = new List<FurnitureItemDefinition>
             {
-                EnsureFurnitureItem(ChairPath, "demo_wood_chair", "Ghe go", FurnitureCategory.Chair, 2, 2, 8),
-                EnsureFurnitureItem(TablePath, "demo_low_table", "Ban tra", FurnitureCategory.Table, 4, 3, 4),
-                EnsureFurnitureItem(PlanterPath, "demo_balcony_planter", "Chau cay ban cong", FurnitureCategory.Farming, 3, 2, 6)
+                EnsureFurnitureItem(ChairPath, ChairPrefabPath, "demo_wood_chair", "Ghe go", FurnitureCategory.Chair, 2, 2, 8),
+                EnsureFurnitureItem(TablePath, TablePrefabPath, "demo_low_table", "Ban tra", FurnitureCategory.Table, 4, 3, 4),
+                EnsureFurnitureItem(PlanterPath, PlanterPrefabPath, "demo_balcony_planter", "Chau cay ban cong", FurnitureCategory.Farming, 3, 2, 6),
+                EnsureFurnitureItem(SofaPath, SofaPrefabPath, "demo_sofa", "Sofa demo", FurnitureCategory.Chair, 4, 2, 3)
             };
             FurnitureCatalogDefinition catalog = EnsureCatalog(items);
 
@@ -103,6 +109,7 @@ namespace SenCity.Features.FurniturePlacement.Editor
 
         private static FurnitureItemDefinition EnsureFurnitureItem(
             string path,
+            string prefabPath,
             string itemId,
             string displayName,
             FurnitureCategory category,
@@ -121,7 +128,7 @@ namespace SenCity.Features.FurniturePlacement.Editor
             serialized.FindProperty("itemId").stringValue = itemId;
             serialized.FindProperty("displayName").stringValue = displayName;
             serialized.FindProperty("category").enumValueIndex = (int)category;
-            serialized.FindProperty("prefab").objectReferenceValue = null;
+            serialized.FindProperty("prefab").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             serialized.FindProperty("icon").objectReferenceValue = null;
             SerializedProperty footprint = serialized.FindProperty("footprint");
             footprint.FindPropertyRelative("width").intValue = width;

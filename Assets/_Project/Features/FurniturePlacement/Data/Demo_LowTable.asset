@@ -15,7 +15,7 @@ MonoBehaviour:
   itemId: demo_low_table
   displayName: Ban tra
   category: 1
-  prefab: {fileID: 0}
+  prefab: {fileID: 7010476232603312941, guid: bad5ef42c289e9842aba19b53adcabea, type: 3}
   icon: {fileID: 0}
   footprint:
     width: 4

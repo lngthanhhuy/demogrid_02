@@ -1,5 +1,6 @@
 using SenCity.Features.FurniturePlacement;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace SenCity.Features.FurniturePlacement.Input
 {
@@ -36,40 +37,51 @@ namespace SenCity.Features.FurniturePlacement.Input
 
         private void HandleKeyboard()
         {
-            if (UnityEngine.Input.GetKeyDown(KeyCode.Escape))
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard == null)
+                return;
+
+            if (keyboard.escapeKey.wasPressedThisFrame)
                 runtime.Cancel();
 
-            if (UnityEngine.Input.GetKeyDown(KeyCode.R))
+            if (keyboard.rKey.wasPressedThisFrame)
                 runtime.RotatePreview();
 
-            if (UnityEngine.Input.GetKeyDown(KeyCode.Return))
+            if (keyboard.enterKey.wasPressedThisFrame || keyboard.numpadEnterKey.wasPressedThisFrame)
                 runtime.Confirm();
 
-            if (UnityEngine.Input.GetKeyDown(KeyCode.M))
+            if (keyboard.mKey.wasPressedThisFrame)
                 runtime.BeginMoveSelected();
 
-            if (UnityEngine.Input.GetKeyDown(KeyCode.Delete) || UnityEngine.Input.GetKeyDown(KeyCode.Backspace))
+            if (keyboard.deleteKey.wasPressedThisFrame || keyboard.backspaceKey.wasPressedThisFrame)
                 runtime.RequestStoreSelected();
 
-            if (UnityEngine.Input.GetKey(KeyCode.LeftControl) || UnityEngine.Input.GetKey(KeyCode.RightControl))
+            if (keyboard.leftCtrlKey.isPressed || keyboard.rightCtrlKey.isPressed)
             {
-                if (UnityEngine.Input.GetKeyDown(KeyCode.S))
+                if (keyboard.sKey.wasPressedThisFrame)
                     runtime.SaveCurrentLayout();
 
-                if (UnityEngine.Input.GetKeyDown(KeyCode.L))
+                if (keyboard.lKey.wasPressedThisFrame)
                     runtime.LoadSavedLayout();
             }
         }
 
         private void HandlePointer()
         {
+            Mouse mouse = Mouse.current;
+            if (mouse == null)
+            {
+                runtime.HoverObject(null);
+                return;
+            }
+
             if (TryGetPointerCell(out Vector2Int cell) && runtime.HasActiveSession)
                 runtime.MovePreview(cell);
 
             PlacedFurnitureObject pointerObject = !runtime.HasActiveSession ? RaycastPlacedFurniture() : null;
             runtime.HoverObject(pointerObject);
 
-            if (UnityEngine.Input.GetMouseButtonDown(0))
+            if (mouse.leftButton.wasPressedThisFrame)
             {
                 pointerDownTime = Time.time;
                 pressedObject = pointerObject;
@@ -81,7 +93,7 @@ namespace SenCity.Features.FurniturePlacement.Input
                     runtime.SelectObject(null);
             }
 
-            if (UnityEngine.Input.GetMouseButton(0) && pressedObject != null && !runtime.HasActiveSession)
+            if (mouse.leftButton.isPressed && pressedObject != null && !runtime.HasActiveSession)
             {
                 if (!moveStartedFromHold && Time.time - pointerDownTime >= holdToMoveSeconds)
                 {
@@ -90,7 +102,7 @@ namespace SenCity.Features.FurniturePlacement.Input
                 }
             }
 
-            if (UnityEngine.Input.GetMouseButtonUp(0))
+            if (mouse.leftButton.wasReleasedThisFrame)
             {
                 if (runtime.HasActiveSession && confirmOnMouseRelease)
                     runtime.Confirm();
@@ -103,7 +115,10 @@ namespace SenCity.Features.FurniturePlacement.Input
         public bool TryGetPointerCell(out Vector2Int cell)
         {
             cell = default;
-            Ray ray = worldCamera.ScreenPointToRay(UnityEngine.Input.mousePosition);
+            if (!TryGetPointerPosition(out Vector2 pointerPosition))
+                return false;
+
+            Ray ray = worldCamera.ScreenPointToRay(pointerPosition);
             var plane = new Plane(Vector3.up, new Vector3(0f, placementPlaneY, 0f));
             if (!plane.Raycast(ray, out float enter))
                 return false;
@@ -114,11 +129,27 @@ namespace SenCity.Features.FurniturePlacement.Input
 
         private PlacedFurnitureObject RaycastPlacedFurniture()
         {
-            Ray ray = worldCamera.ScreenPointToRay(UnityEngine.Input.mousePosition);
+            if (!TryGetPointerPosition(out Vector2 pointerPosition))
+                return null;
+
+            Ray ray = worldCamera.ScreenPointToRay(pointerPosition);
             if (!Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, placedFurnitureMask))
                 return null;
 
             return hit.collider.GetComponentInParent<PlacedFurnitureObject>();
+        }
+
+        private static bool TryGetPointerPosition(out Vector2 pointerPosition)
+        {
+            Mouse mouse = Mouse.current;
+            if (mouse == null)
+            {
+                pointerPosition = default;
+                return false;
+            }
+
+            pointerPosition = mouse.position.ReadValue();
+            return true;
         }
     }
 }

@@ -77,6 +77,7 @@ Rules:
 - Features can reference `Core` and `Shared`.
 - `Production` can compose features and services, but feature runtime code should not depend on production backend details.
 - Backend-specific code should live behind interfaces or adapters before it reaches gameplay code.
+- Runtime assemblies should mirror this direction: `SenCity.FurniturePlacement` can reference `SenCity.Core`; `SenCity.Core` must stay feature-free.
 
 ## PR Naming Guidance
 

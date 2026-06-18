@@ -3,7 +3,8 @@
     "rootNamespace": "",
     "references": [
         "SenCity.Core",
-        "SenCity.FurniturePlacement"
+        "SenCity.FurniturePlacement",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [
         "Editor"

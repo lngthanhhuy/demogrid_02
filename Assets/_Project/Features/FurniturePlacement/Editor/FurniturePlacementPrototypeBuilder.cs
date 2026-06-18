@@ -7,6 +7,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -211,16 +212,19 @@ namespace SenCity.Features.FurniturePlacement.Editor
         {
             var eventSystem = new GameObject("EventSystem");
             eventSystem.AddComponent<EventSystem>();
-            eventSystem.AddComponent<StandaloneInputModule>();
+            eventSystem.AddComponent<InputSystemUIInputModule>().AssignDefaultActions();
 
             var canvasObject = new GameObject("Furniture Placement HUD");
             Canvas canvas = canvasObject.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvasObject.AddComponent<CanvasScaler>();
+            CanvasScaler scaler = canvasObject.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1280f, 720f);
+            scaler.matchWidthOrHeight = 0.5f;
             canvasObject.AddComponent<GraphicRaycaster>();
 
             Font defaultFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            Transform inventoryPanel = CreatePanel(canvasObject.transform, "Inventory Panel", new Vector2(170f, 260f), new Vector2(95f, -155f));
+            Transform inventoryPanel = CreatePanel(canvasObject.transform, "Inventory Panel", new Vector2(204f, 300f), new Vector2(116f, -176f));
             for (int i = 0; i < items.Count; i++)
                 CreateInventoryButton(inventoryPanel, runtime, items[i], defaultFont, i);
 
@@ -230,14 +234,14 @@ namespace SenCity.Features.FurniturePlacement.Editor
             SetObjectReference(hud, "runtime", runtime);
             SetObjectReference(hud, "toastPresenter", toast);
             SetObjectReference(hud, "confirmDialog", dialog);
-            SetObjectReference(hud, "moveButton", CreateCommandButton(canvasObject.transform, "Move Button", "Move", defaultFont, new Vector2(-420f, 54f)));
-            SetObjectReference(hud, "rotateButton", CreateCommandButton(canvasObject.transform, "Rotate Button", "Rotate", defaultFont, new Vector2(-280f, 54f)));
-            SetObjectReference(hud, "confirmButton", CreateCommandButton(canvasObject.transform, "Confirm Button", "Confirm", defaultFont, new Vector2(-140f, 54f)));
-            SetObjectReference(hud, "cancelButton", CreateCommandButton(canvasObject.transform, "Cancel Button", "Cancel", defaultFont, new Vector2(0f, 54f)));
-            SetObjectReference(hud, "storeButton", CreateCommandButton(canvasObject.transform, "Store Button", "Store", defaultFont, new Vector2(140f, 54f)));
-            SetObjectReference(hud, "closeButton", CreateCommandButton(canvasObject.transform, "Close Selection Button", "Close", defaultFont, new Vector2(280f, 54f)));
-            SetObjectReference(hud, "saveButton", CreateCommandButton(canvasObject.transform, "Save Button", "Save", defaultFont, new Vector2(420f, 54f)));
-            SetObjectReference(hud, "loadButton", CreateCommandButton(canvasObject.transform, "Load Button", "Load", defaultFont, new Vector2(560f, 54f)));
+            SetObjectReference(hud, "moveButton", CreateCommandButton(canvasObject.transform, "Move Button", "Move", defaultFont, new Vector2(-392f, 52f)));
+            SetObjectReference(hud, "rotateButton", CreateCommandButton(canvasObject.transform, "Rotate Button", "Rotate", defaultFont, new Vector2(-280f, 52f)));
+            SetObjectReference(hud, "confirmButton", CreateCommandButton(canvasObject.transform, "Confirm Button", "Confirm", defaultFont, new Vector2(-168f, 52f)));
+            SetObjectReference(hud, "cancelButton", CreateCommandButton(canvasObject.transform, "Cancel Button", "Cancel", defaultFont, new Vector2(-56f, 52f)));
+            SetObjectReference(hud, "storeButton", CreateCommandButton(canvasObject.transform, "Store Button", "Store", defaultFont, new Vector2(56f, 52f)));
+            SetObjectReference(hud, "closeButton", CreateCommandButton(canvasObject.transform, "Close Selection Button", "Close", defaultFont, new Vector2(168f, 52f)));
+            SetObjectReference(hud, "saveButton", CreateCommandButton(canvasObject.transform, "Save Button", "Save", defaultFont, new Vector2(280f, 52f)));
+            SetObjectReference(hud, "loadButton", CreateCommandButton(canvasObject.transform, "Load Button", "Load", defaultFont, new Vector2(392f, 52f)));
             SetObjectReference(hud, "selectedItemNameText", CreateText(canvasObject.transform, "Selected Item Text", "No selection", defaultFont, new Vector2(180f, 28f), new Vector2(122f, 100f)));
         }
 
@@ -257,7 +261,11 @@ namespace SenCity.Features.FurniturePlacement.Editor
 
         private static Button CreateInventoryButton(Transform parent, FurniturePlacementRuntime runtime, FurnitureItemDefinition item, Font font, int index)
         {
-            Button button = CreateButton(parent, $"Inventory {item.DisplayName}", item.DisplayName, font, new Vector2(0f, -30f - index * 58f));
+            Button button = CreateButton(parent, $"Inventory {item.DisplayName}", item.DisplayName, font, new Vector2(0f, -22f - index * 58f), new Vector2(164f, 46f));
+            RectTransform rect = button.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 1f);
+            rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.pivot = new Vector2(0.5f, 1f);
             FurnitureInventoryButton inventoryButton = button.gameObject.AddComponent<FurnitureInventoryButton>();
             Text label = button.GetComponentInChildren<Text>();
             inventoryButton.Configure(runtime, item, label);
@@ -266,7 +274,7 @@ namespace SenCity.Features.FurniturePlacement.Editor
 
         private static Button CreateCommandButton(Transform parent, string name, string label, Font font, Vector2 anchoredPosition)
         {
-            Button button = CreateButton(parent, name, label, font, anchoredPosition);
+            Button button = CreateButton(parent, name, label, font, anchoredPosition, new Vector2(104f, 42f));
             RectTransform rect = button.GetComponent<RectTransform>();
             rect.anchorMin = new Vector2(0.5f, 0f);
             rect.anchorMax = new Vector2(0.5f, 0f);
@@ -275,13 +283,18 @@ namespace SenCity.Features.FurniturePlacement.Editor
 
         private static Button CreateButton(Transform parent, string name, string label, Font font, Vector2 anchoredPosition)
         {
+            return CreateButton(parent, name, label, font, anchoredPosition, new Vector2(132f, 42f));
+        }
+
+        private static Button CreateButton(Transform parent, string name, string label, Font font, Vector2 anchoredPosition, Vector2 size)
+        {
             var buttonObject = new GameObject(name);
             buttonObject.transform.SetParent(parent, false);
             Image image = buttonObject.AddComponent<Image>();
             image.color = new Color(0.86f, 0.55f, 0.28f, 0.92f);
             Button button = buttonObject.AddComponent<Button>();
             RectTransform rect = buttonObject.GetComponent<RectTransform>();
-            rect.sizeDelta = new Vector2(132f, 42f);
+            rect.sizeDelta = size;
             rect.anchoredPosition = anchoredPosition;
 
             Text text = CreateText(buttonObject.transform, "Label", label, font, rect.sizeDelta, Vector2.zero);

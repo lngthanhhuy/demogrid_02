@@ -448,8 +448,24 @@ namespace SenCity.Features.FurniturePlacement
                 runtimeObject = placedObject.AddComponent<PlacedFurnitureObject>();
 
             runtimeObject.Initialize(item, instance, gridProfile);
+            EnsureSelectionCollider(placedObject, instance);
             placedObjectsById[instance.InstanceId] = runtimeObject;
             return runtimeObject;
+        }
+
+        private void EnsureSelectionCollider(GameObject placedObject, FurnitureInstanceData instance)
+        {
+            if (placedObject == null || instance == null || placedObject.GetComponentInChildren<Collider>() != null)
+                return;
+
+            float cellSize = gridProfile != null ? gridProfile.cellSize : 1f;
+            GridFootprint footprint = instance.Footprint;
+            var collider = placedObject.AddComponent<BoxCollider>();
+            collider.size = new Vector3(
+                Mathf.Max(cellSize, footprint.Width * cellSize),
+                Mathf.Max(0.8f, cellSize * 2f),
+                Mathf.Max(cellSize, footprint.Depth * cellSize));
+            collider.center = new Vector3(0f, collider.size.y * 0.5f, 0f);
         }
 
         private void DestroyGhost()

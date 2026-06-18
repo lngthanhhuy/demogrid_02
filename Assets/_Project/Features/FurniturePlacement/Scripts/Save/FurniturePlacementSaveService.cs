@@ -3,7 +3,7 @@ using System.IO;
 using SenCity.Features.FurniturePlacement;
 using UnityEngine;
 
-namespace SenCity.Core.Save
+namespace SenCity.Features.FurniturePlacement.Save
 {
     public class FurniturePlacementSaveService : MonoBehaviour
     {

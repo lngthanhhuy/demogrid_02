@@ -1188,7 +1188,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 98e55434529146edae8308429cbf20e2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SenCity.Core.Save.FurniturePlacementSaveService
+  m_EditorClassIdentifier: Assembly-CSharp::SenCity.Features.FurniturePlacement.Save.FurniturePlacementSaveService
   fileName: sen_city_room_layout.json
 --- !u!114 &788927974
 MonoBehaviour:
@@ -1231,7 +1231,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c1b655d8f22e488eb575462f09c81e77, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SenCity.Core.Input.FurniturePlacementInputAdapter
+  m_EditorClassIdentifier: Assembly-CSharp::SenCity.Features.FurniturePlacement.Input.FurniturePlacementInputAdapter
   runtime: {fileID: 0}
   worldCamera: {fileID: 0}
   placedFurnitureMask:

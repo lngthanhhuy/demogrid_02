@@ -19,7 +19,7 @@ Assets/_Project/
 
 | Folder | Role | What belongs here |
 | --- | --- | --- |
-| `Core` | Horizontal engine-facing systems | Grid primitives, save contracts, input adapters, base UI helpers, code that multiple features can depend on. |
+| `Core` | Horizontal engine-facing systems | Grid primitives, base UI helpers, and code that multiple features can depend on. |
 | `Shared` | SEN CITY reusable gameplay/UI assets | Shared prefabs, UI widgets, materials, ScriptableObject templates, VFX/audio wrappers that are not owned by one feature. |
 | `Features/<FeatureName>` | Vertical gameplay slices | Feature runtime scripts, data, scenes, editor tools, feature prefabs, and feature-specific UI. |
 | `Art` | Production art staging and approved art assets | Furniture, environment, pet, character, UI, texture, material, and source-art pipelines. Heavy files must use Git LFS or private asset storage. |
@@ -41,7 +41,7 @@ Assets/_Project/Features/<FeatureName>/
   Editor/
 ```
 
-- `Scripts`: runtime feature behavior and feature-owned data models.
+- `Scripts`: runtime feature behavior, feature-owned input adapters, save snapshots, and feature-owned data models.
 - `Data`: light YAML assets such as ScriptableObjects, catalogs, profiles, and tunable configs.
 - `Prefabs`: feature-owned prefabs that are small enough for normal review.
 - `UI`: feature-owned panels, bindings, and UI prefabs.

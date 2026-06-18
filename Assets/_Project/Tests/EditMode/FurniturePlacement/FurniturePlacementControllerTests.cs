@@ -95,6 +95,26 @@ namespace SenCity.Tests.FurniturePlacement
         }
 
         [Test]
+        public void RotatePreviewRevalidatesFootprintAndDisablesConfirmWhenOutOfBounds()
+        {
+            SenCityGridProfile profile = factory.CreateGridProfile(columns: 3, rows: 3);
+            FurnitureItemDefinition item = factory.CreateItem("sofa", width: 1, depth: 2);
+            FurniturePlacementController controller = factory.AddComponent<FurniturePlacementController>();
+            controller.Configure(profile);
+
+            Assert.That(controller.TryBeginPlaceNew(item, new Vector2Int(2, 0)), Is.True);
+            Assert.That(controller.ActiveSession.LastValidation.IsValid, Is.True);
+            Assert.That(controller.CanConfirmActiveSession, Is.True);
+
+            controller.RotatePreviewClockwise();
+
+            Assert.That(controller.ActiveSession.RotationDegrees, Is.EqualTo(90));
+            Assert.That(controller.ActiveSession.LastValidation.Failure, Is.EqualTo(PlacementValidationFailure.OutOfBounds));
+            Assert.That(controller.CanConfirmActiveSession, Is.False);
+            Assert.That(controller.ConfirmActiveSession(), Is.False);
+        }
+
+        [Test]
         public void MoveExistingIgnoresOwnCellsAndUpdatesInstance()
         {
             SenCityGridProfile profile = factory.CreateGridProfile(columns: 4, rows: 4);

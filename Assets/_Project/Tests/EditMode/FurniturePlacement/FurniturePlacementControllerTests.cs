@@ -98,11 +98,11 @@ namespace SenCity.Tests.FurniturePlacement
         public void RotatePreviewRevalidatesFootprintAndDisablesConfirmWhenOutOfBounds()
         {
             SenCityGridProfile profile = factory.CreateGridProfile(columns: 3, rows: 3);
-            FurnitureItemDefinition item = factory.CreateItem("sofa", width: 1, depth: 2);
+            FurnitureItemDefinition item = factory.CreateItem("sofa", width: 3, depth: 1);
             FurniturePlacementController controller = factory.AddComponent<FurniturePlacementController>();
             controller.Configure(profile);
 
-            Assert.That(controller.TryBeginPlaceNew(item, new Vector2Int(2, 0)), Is.True);
+            Assert.That(controller.TryBeginPlaceNew(item, new Vector2Int(0, 2)), Is.True);
             Assert.That(controller.ActiveSession.LastValidation.IsValid, Is.True);
             Assert.That(controller.CanConfirmActiveSession, Is.True);
 
@@ -112,6 +112,71 @@ namespace SenCity.Tests.FurniturePlacement
             Assert.That(controller.ActiveSession.LastValidation.Failure, Is.EqualTo(PlacementValidationFailure.OutOfBounds));
             Assert.That(controller.CanConfirmActiveSession, Is.False);
             Assert.That(controller.ConfirmActiveSession(), Is.False);
+        }
+
+        [Test]
+        public void RotatePreviewPreservesFootprintCenterForRectangularFurniture()
+        {
+            SenCityGridProfile profile = factory.CreateGridProfile(columns: 12, rows: 12, cellSize: 0.2f);
+            FurnitureItemDefinition item = factory.CreateItem("sofa", width: 4, depth: 2);
+            FurniturePlacementController controller = factory.AddComponent<FurniturePlacementController>();
+            controller.Configure(profile);
+            var origin = new Vector2Int(4, 5);
+
+            Assert.That(controller.TryBeginPlaceNew(item, origin), Is.True);
+            Vector3 centerBefore = profile.FootprintCenter(
+                controller.ActiveSession.OriginCell,
+                item.Footprint,
+                controller.ActiveSession.RotationDegrees);
+
+            controller.RotatePreviewClockwise();
+
+            Vector3 centerAfter = profile.FootprintCenter(
+                controller.ActiveSession.OriginCell,
+                item.Footprint,
+                controller.ActiveSession.RotationDegrees);
+            Assert.That(controller.ActiveSession.OriginCell, Is.EqualTo(new Vector2Int(5, 4)));
+            Assert.That(Vector3.Distance(centerAfter, centerBefore), Is.LessThan(0.0001f));
+        }
+
+        [Test]
+        public void RepeatedPreviewCellDoesNotBroadcastRedundantSessionChanges()
+        {
+            SenCityGridProfile profile = factory.CreateGridProfile(columns: 6, rows: 6);
+            FurnitureItemDefinition item = factory.CreateItem("chair", width: 2, depth: 2);
+            FurniturePlacementController controller = factory.AddComponent<FurniturePlacementController>();
+            int changeCount = 0;
+            controller.Configure(profile);
+            controller.SessionChanged += _ => changeCount++;
+
+            controller.TryBeginPlaceNew(item, new Vector2Int(1, 1));
+            controller.MovePreview(new Vector2Int(1, 1));
+            controller.MovePreview(new Vector2Int(2, 1));
+            controller.MovePreview(new Vector2Int(2, 1));
+
+            Assert.That(changeCount, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void InventoryPlacementRequiresFirstRoomPositionBeforeConfirm()
+        {
+            SenCityGridProfile profile = factory.CreateGridProfile(columns: 6, rows: 6);
+            FurnitureItemDefinition item = factory.CreateItem("chair", width: 2, depth: 2);
+            FurniturePlacementController controller = factory.AddComponent<FurniturePlacementController>();
+            controller.Configure(profile);
+
+            Assert.That(controller.TryBeginPlaceNew(
+                item,
+                Vector2Int.zero,
+                hasInitialPreviewPosition: false), Is.True);
+            Assert.That(controller.ActiveSession.HasPreviewPosition, Is.False);
+            Assert.That(controller.CanConfirmActiveSession, Is.False);
+
+            controller.MovePreview(new Vector2Int(1, 1));
+
+            Assert.That(controller.ActiveSession.HasPreviewPosition, Is.True);
+            Assert.That(controller.ActiveSession.LastValidation.IsValid, Is.True);
+            Assert.That(controller.CanConfirmActiveSession, Is.True);
         }
 
         [Test]

@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 00e253e44ace4622bf4cdfd48168105d, type: 3}
   m_Name: SenCityPlacementGrid
-  m_EditorClassIdentifier: Assembly-CSharp::SenCity.Core.Grid.SenCityGridProfile
+  m_EditorClassIdentifier: SenCity.Core::SenCity.Core.Grid.SenCityGridProfile
   cellSize: 0.2
   columns: 20
   rows: 20

@@ -11,6 +11,8 @@ namespace SenCity.Features.FurniturePlacement
         [SerializeField] private Text label;
 
         private Button button;
+        private int displayedQuantity = int.MinValue;
+        private bool? displayedInteractable;
 
         private void Awake()
         {
@@ -42,7 +44,7 @@ namespace SenCity.Features.FurniturePlacement
 
         public void BeginPlacement()
         {
-            runtime?.BeginPlaceNew(item, Vector2Int.zero);
+            runtime?.BeginPlaceNewFromInventory(item);
         }
 
         private void Refresh()
@@ -51,11 +53,15 @@ namespace SenCity.Features.FurniturePlacement
                 button = GetComponent<Button>();
 
             int quantity = runtime != null && item != null ? runtime.GetInventoryQuantity(item) : 0;
-            if (label != null && item != null)
+            if (label != null && item != null && displayedQuantity != quantity)
                 label.text = $"{item.DisplayName} x{quantity}";
 
-            if (button != null)
-                button.interactable = runtime != null && runtime.CanBeginPlaceNew(item);
+            bool interactable = runtime != null && runtime.CanBeginPlaceNew(item);
+            if (button != null && displayedInteractable != interactable)
+                button.interactable = interactable;
+
+            displayedQuantity = quantity;
+            displayedInteractable = interactable;
         }
 
         private void Subscribe()
@@ -80,7 +86,9 @@ namespace SenCity.Features.FurniturePlacement
 
         private void HandleSessionChanged(PlacementSession session)
         {
-            Refresh();
+            bool interactable = runtime != null && runtime.CanBeginPlaceNew(item);
+            if (displayedInteractable != interactable)
+                Refresh();
         }
     }
 }

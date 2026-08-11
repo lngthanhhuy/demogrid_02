@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using SenCity.Core.Grid;
 using SenCity.Features.FurniturePlacement.Save;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace SenCity.Features.FurniturePlacement
 {
@@ -16,11 +17,13 @@ namespace SenCity.Features.FurniturePlacement
         [SerializeField] private Transform placedRoot;
         [SerializeField] private Transform previewRoot;
         [SerializeField] private bool autoSaveAfterCommit = true;
+        [SerializeField] private bool autoLoadOnStart = true;
 
         private readonly Dictionary<string, PlacedFurnitureObject> placedObjectsById = new Dictionary<string, PlacedFurnitureObject>();
         private FurnitureGhostPreview activeGhost;
         private PlacedFurnitureObject selectedObject;
         private PlacedFurnitureObject hoveredObject;
+        private PlacedFurnitureObject movingPreviewSource;
         private FurnitureRoomLayoutSnapshot pendingRollbackRoomLayout;
         private FurnitureInventorySnapshot pendingRollbackInventory;
 
@@ -34,6 +37,7 @@ namespace SenCity.Features.FurniturePlacement
         public PlacementSession ActiveSession => controller != null ? controller.ActiveSession : null;
         public PlacedFurnitureObject SelectedObject => selectedObject;
         public PlacedFurnitureObject HoveredObject => hoveredObject;
+        public SenCityGridProfile GridProfile => gridProfile;
 
         private void Awake()
         {
@@ -55,6 +59,12 @@ namespace SenCity.Features.FurniturePlacement
 
             if (inventory != null)
                 inventory.InventoryChanged += HandleInventoryChanged;
+        }
+
+        private void Start()
+        {
+            if (autoLoadOnStart && saveService != null)
+                LoadFrom(saveService);
         }
 
         private void OnDestroy()
@@ -103,9 +113,34 @@ namespace SenCity.Features.FurniturePlacement
             return controller.TryBeginPlaceNew(item, originCell);
         }
 
+        public bool BeginPlaceNewFromInventory(FurnitureItemDefinition item)
+        {
+            if (inventory != null && inventory.GetQuantity(item) <= 0)
+            {
+                RequestToast("Item is no longer available in storage.");
+                return false;
+            }
+
+            return controller.TryBeginPlaceNew(item, Vector2Int.zero, hasInitialPreviewPosition: false);
+        }
+
         public int GetInventoryQuantity(FurnitureItemDefinition item)
         {
             return inventory != null ? inventory.GetQuantity(item) : 0;
+        }
+
+        public FurnitureItemDefinition GetFirstAvailableItem()
+        {
+            if (inventory == null)
+                return null;
+
+            foreach (FurnitureItemDefinition item in inventory.Catalog)
+            {
+                if (item != null && inventory.GetQuantity(item) > 0)
+                    return item;
+            }
+
+            return null;
         }
 
         public bool BeginMoveSelected()
@@ -255,6 +290,20 @@ namespace SenCity.Features.FurniturePlacement
             return gridProfile != null && gridProfile.WorldToCell(worldPosition, out cell);
         }
 
+        public bool TryWorldToPreviewOrigin(Vector3 worldPosition, out Vector2Int originCell)
+        {
+            originCell = default;
+            PlacementSession session = ActiveSession;
+            return session != null &&
+                   session.Item != null &&
+                   gridProfile != null &&
+                   gridProfile.WorldToNearestFootprintOrigin(
+                       worldPosition,
+                       session.Item.Footprint,
+                       session.RotationDegrees,
+                       out originCell);
+        }
+
         public bool SaveTo(FurniturePlacementSaveService saveService)
         {
             if (saveService == null)
@@ -317,6 +366,7 @@ namespace SenCity.Features.FurniturePlacement
 
         private void HandleSessionChanged(PlacementSession session)
         {
+            UpdateMovingPreviewSource(session);
             if (session == null)
             {
                 DestroyGhost();
@@ -333,6 +383,7 @@ namespace SenCity.Features.FurniturePlacement
             }
 
             EnsureGhost(session.Item);
+            activeGhost.gameObject.SetActive(session.HasPreviewPosition);
             activeGhost.SetPose(gridProfile, session.OriginCell, session.Item.Footprint, session.RotationDegrees);
             activeGhost.SetValidity(session.LastValidation.IsValid);
             SessionChanged?.Invoke(session);
@@ -455,17 +506,31 @@ namespace SenCity.Features.FurniturePlacement
 
         private void EnsureSelectionCollider(GameObject placedObject, FurnitureInstanceData instance)
         {
-            if (placedObject == null || instance == null || placedObject.GetComponentInChildren<Collider>() != null)
+            if (placedObject == null || instance == null)
                 return;
 
             float cellSize = gridProfile != null ? gridProfile.cellSize : 1f;
             GridFootprint footprint = instance.Footprint;
-            var collider = placedObject.AddComponent<BoxCollider>();
-            collider.size = new Vector3(
+            Vector3 footprintSize = new Vector3(
                 Mathf.Max(cellSize, footprint.Width * cellSize),
                 Mathf.Max(0.8f, cellSize * 2f),
                 Mathf.Max(cellSize, footprint.Depth * cellSize));
-            collider.center = new Vector3(0f, collider.size.y * 0.5f, 0f);
+
+            if (placedObject.GetComponentInChildren<Collider>() == null)
+            {
+                var collider = placedObject.AddComponent<BoxCollider>();
+                collider.size = footprintSize;
+                collider.center = new Vector3(0f, footprintSize.y * 0.5f, 0f);
+            }
+
+            NavMeshObstacle obstacle = placedObject.GetComponent<NavMeshObstacle>();
+            if (obstacle == null)
+                obstacle = placedObject.AddComponent<NavMeshObstacle>();
+            obstacle.shape = NavMeshObstacleShape.Box;
+            obstacle.size = footprintSize;
+            obstacle.center = new Vector3(0f, footprintSize.y * 0.5f, 0f);
+            obstacle.carving = true;
+            obstacle.carveOnlyStationary = true;
         }
 
         private void DestroyGhost()
@@ -479,6 +544,7 @@ namespace SenCity.Features.FurniturePlacement
 
         private void ClearPlacedObjects()
         {
+            UpdateMovingPreviewSource(null);
             HoverObject(null);
             foreach (PlacedFurnitureObject placedObject in placedObjectsById.Values)
             {
@@ -488,6 +554,23 @@ namespace SenCity.Features.FurniturePlacement
 
             placedObjectsById.Clear();
             SelectObject(null);
+        }
+
+        private void UpdateMovingPreviewSource(PlacementSession session)
+        {
+            PlacedFurnitureObject nextSource = null;
+            if (session != null && session.IsMoveExisting && session.SourceInstance != null)
+                placedObjectsById.TryGetValue(session.SourceInstance.InstanceId, out nextSource);
+
+            if (movingPreviewSource == nextSource)
+                return;
+
+            if (movingPreviewSource != null)
+                movingPreviewSource.SetPlacementVisible(true);
+
+            movingPreviewSource = nextSource;
+            if (movingPreviewSource != null)
+                movingPreviewSource.SetPlacementVisible(false);
         }
 
         private static void DestroyRuntimeObject(GameObject target)

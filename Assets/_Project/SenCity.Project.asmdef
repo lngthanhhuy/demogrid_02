@@ -1,7 +1,9 @@
 {
     "name": "SenCity.Project",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "SenCity.Core"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

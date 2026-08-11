@@ -11,14 +11,14 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4df2f008f74d41258e2c619016d50cd7, type: 3}
   m_Name: Demo_BalconyPlanter
-  m_EditorClassIdentifier: Assembly-CSharp::SenCity.Features.FurniturePlacement.FurnitureItemDefinition
+  m_EditorClassIdentifier: SenCity.FurniturePlacement::SenCity.Features.FurniturePlacement.FurnitureItemDefinition
   itemId: demo_balcony_planter
   displayName: Chau cay ban cong
   category: 6
   prefab: {fileID: 3771488859045753822, guid: 45d2ce6d8a9a94c48bb684d70ab12fb1, type: 3}
   icon: {fileID: 0}
   footprint:
-    width: 3
+    width: 2
     depth: 2
   startingQuantity: 6
   canStore: 1

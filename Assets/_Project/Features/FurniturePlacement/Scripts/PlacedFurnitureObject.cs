@@ -1,5 +1,6 @@
 using SenCity.Core.Grid;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace SenCity.Features.FurniturePlacement
 {
@@ -10,6 +11,13 @@ namespace SenCity.Features.FurniturePlacement
 
         private FurnitureInstanceData data;
         private FurnitureSelectionHighlight selectionHighlight;
+        private Renderer[] placementRenderers;
+        private Collider[] placementColliders;
+        private NavMeshObstacle[] placementObstacles;
+        private bool[] rendererEnabledStates;
+        private bool[] colliderEnabledStates;
+        private bool[] obstacleEnabledStates;
+        private bool placementVisible = true;
 
         public FurnitureItemDefinition Item => item;
         public FurnitureInstanceData Data => data;
@@ -48,6 +56,32 @@ namespace SenCity.Features.FurniturePlacement
             transform.rotation = Quaternion.Euler(0f, GridFootprint.NormalizeRotation(data.RotationDegrees), 0f);
         }
 
+        public void SetPlacementVisible(bool visible)
+        {
+            if (placementVisible == visible)
+                return;
+
+            CachePlacementComponents();
+            placementVisible = visible;
+            for (int i = 0; i < placementRenderers.Length; i++)
+            {
+                if (placementRenderers[i] != null)
+                    placementRenderers[i].enabled = visible && rendererEnabledStates[i];
+            }
+
+            for (int i = 0; i < placementColliders.Length; i++)
+            {
+                if (placementColliders[i] != null)
+                    placementColliders[i].enabled = visible && colliderEnabledStates[i];
+            }
+
+            for (int i = 0; i < placementObstacles.Length; i++)
+            {
+                if (placementObstacles[i] != null)
+                    placementObstacles[i].enabled = visible && obstacleEnabledStates[i];
+            }
+        }
+
         private void EnsureSelectionHighlight()
         {
             if (selectionHighlight != null)
@@ -56,6 +90,26 @@ namespace SenCity.Features.FurniturePlacement
             selectionHighlight = GetComponent<FurnitureSelectionHighlight>();
             if (selectionHighlight == null)
                 selectionHighlight = gameObject.AddComponent<FurnitureSelectionHighlight>();
+        }
+
+        private void CachePlacementComponents()
+        {
+            if (placementRenderers != null)
+                return;
+
+            placementRenderers = GetComponentsInChildren<Renderer>(true);
+            placementColliders = GetComponentsInChildren<Collider>(true);
+            placementObstacles = GetComponentsInChildren<NavMeshObstacle>(true);
+            rendererEnabledStates = new bool[placementRenderers.Length];
+            colliderEnabledStates = new bool[placementColliders.Length];
+            obstacleEnabledStates = new bool[placementObstacles.Length];
+
+            for (int i = 0; i < placementRenderers.Length; i++)
+                rendererEnabledStates[i] = placementRenderers[i] != null && placementRenderers[i].enabled;
+            for (int i = 0; i < placementColliders.Length; i++)
+                colliderEnabledStates[i] = placementColliders[i] != null && placementColliders[i].enabled;
+            for (int i = 0; i < placementObstacles.Length; i++)
+                obstacleEnabledStates[i] = placementObstacles[i] != null && placementObstacles[i].enabled;
         }
     }
 }

@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4df2f008f74d41258e2c619016d50cd7, type: 3}
   m_Name: Demo_Sofa
-  m_EditorClassIdentifier: Assembly-CSharp::SenCity.Features.FurniturePlacement.FurnitureItemDefinition
+  m_EditorClassIdentifier: SenCity.FurniturePlacement::SenCity.Features.FurniturePlacement.FurnitureItemDefinition
   itemId: demo_sofa
   displayName: Sofa demo
   category: 0

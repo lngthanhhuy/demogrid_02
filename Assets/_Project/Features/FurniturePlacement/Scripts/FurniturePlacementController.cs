@@ -35,7 +35,10 @@ namespace SenCity.Features.FurniturePlacement
             InitializeIfNeeded(force: true);
         }
 
-        public bool TryBeginPlaceNew(FurnitureItemDefinition item, Vector2Int originCell)
+        public bool TryBeginPlaceNew(
+            FurnitureItemDefinition item,
+            Vector2Int originCell,
+            bool hasInitialPreviewPosition = true)
         {
             InitializeIfNeeded();
             if (!HasPlacementGrid())
@@ -47,7 +50,12 @@ namespace SenCity.Features.FurniturePlacement
             if (item == null)
                 return Fail("Missing furniture item.");
 
-            activeSession = new PlacementSession(PlacementSessionState.PlacementNew, item, originCell, 0);
+            activeSession = new PlacementSession(
+                PlacementSessionState.PlacementNew,
+                item,
+                originCell,
+                0,
+                hasPreviewPosition: hasInitialPreviewPosition);
             ValidateActiveSession();
             NotifySessionChanged();
             return true;
@@ -81,7 +89,9 @@ namespace SenCity.Features.FurniturePlacement
             if (activeSession == null)
                 return;
 
-            activeSession.MovePreview(originCell);
+            if (!activeSession.MovePreview(originCell))
+                return;
+
             ValidateActiveSession();
             NotifySessionChanged();
         }
@@ -91,7 +101,9 @@ namespace SenCity.Features.FurniturePlacement
             if (activeSession == null)
                 return;
 
-            activeSession.RotateClockwise();
+            if (!activeSession.RotateClockwise())
+                return;
+
             ValidateActiveSession();
             NotifySessionChanged();
         }
@@ -244,6 +256,14 @@ namespace SenCity.Features.FurniturePlacement
         {
             if (activeSession == null)
                 return;
+
+            if (!activeSession.HasPreviewPosition)
+            {
+                activeSession.ApplyValidation(PlacementValidationResult.Invalid(
+                    PlacementValidationFailure.NoActiveSession,
+                    "Tap the room to place the item."));
+                return;
+            }
 
             if (!HasPlacementGrid())
             {

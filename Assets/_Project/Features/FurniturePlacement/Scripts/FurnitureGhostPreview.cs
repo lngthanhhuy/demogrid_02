@@ -10,6 +10,11 @@ namespace SenCity.Features.FurniturePlacement
 
         private MaterialPropertyBlock propertyBlock;
         private Renderer[] renderers;
+        private bool poseInitialized;
+        private Vector2Int lastOriginCell;
+        private int lastRotationDegrees;
+        private bool validityInitialized;
+        private bool lastValidity;
 
         private void Awake()
         {
@@ -25,12 +30,22 @@ namespace SenCity.Features.FurniturePlacement
             if (gridProfile == null)
                 return;
 
+            int normalizedRotation = GridFootprint.NormalizeRotation(rotationDegrees);
+            if (poseInitialized && lastOriginCell == originCell && lastRotationDegrees == normalizedRotation)
+                return;
+
             transform.position = gridProfile.FootprintCenter(originCell, footprint, rotationDegrees);
-            transform.rotation = Quaternion.Euler(0f, GridFootprint.NormalizeRotation(rotationDegrees), 0f);
+            transform.rotation = Quaternion.Euler(0f, normalizedRotation, 0f);
+            lastOriginCell = originCell;
+            lastRotationDegrees = normalizedRotation;
+            poseInitialized = true;
         }
 
         public void SetValidity(bool isValid)
         {
+            if (validityInitialized && lastValidity == isValid)
+                return;
+
             CacheRenderers();
             EnsurePropertyBlock();
             Color color = isValid ? validColor : invalidColor;
@@ -44,6 +59,9 @@ namespace SenCity.Features.FurniturePlacement
                 propertyBlock.SetColor("_Color", color);
                 previewRenderer.SetPropertyBlock(propertyBlock);
             }
+
+            lastValidity = isValid;
+            validityInitialized = true;
         }
 
         private void CacheRenderers()

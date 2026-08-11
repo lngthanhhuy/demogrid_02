@@ -25,6 +25,24 @@ namespace SenCity.Core.Grid
             return IsValidCell(cell);
         }
 
+        public bool WorldToNearestFootprintOrigin(
+            Vector3 worldPosition,
+            GridFootprint footprint,
+            int rotationDegrees,
+            out Vector2Int originCell)
+        {
+            originCell = default;
+            if (cellSize <= 0f)
+                return false;
+
+            Vector3 local = worldPosition - origin;
+            GridFootprint rotated = footprint.Rotated(rotationDegrees);
+            originCell = new Vector2Int(
+                Mathf.RoundToInt(local.x / cellSize - rotated.Width * 0.5f),
+                Mathf.RoundToInt(local.z / cellSize - rotated.Depth * 0.5f));
+            return true;
+        }
+
         public Vector3 CellOrigin(Vector2Int cell)
         {
             return origin + new Vector3(cell.x * cellSize, 0f, cell.y * cellSize);

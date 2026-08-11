@@ -4,6 +4,8 @@
     "references": [
         "SenCity.Core",
         "SenCity.FurniturePlacement",
+        "SenCity.Project",
+        "Unity.AI.Navigation",
         "Unity.InputSystem"
     ],
     "includePlatforms": [

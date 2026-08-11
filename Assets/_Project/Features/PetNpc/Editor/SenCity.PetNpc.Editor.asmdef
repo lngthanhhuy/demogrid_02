@@ -1,0 +1,17 @@
+{
+  "name": "SenCity.PetNpc.Editor",
+  "rootNamespace": "SenCity.Features.PetNpc.Editor",
+  "references": [
+    "SenCity.Project",
+    "Unity.AI.Navigation"
+  ],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

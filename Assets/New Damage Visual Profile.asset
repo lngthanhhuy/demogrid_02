@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9cf39f63a976b74ab430e1f29d13b18, type: 3}
+  m_Name: New Damage Visual Profile
+  m_EditorClassIdentifier: SenCity.Core::SenCity.Core.DamageVisual.DamageVisualProfile
+  normal:
+    textureOverride: {fileID: 0}
+    damageMask: {fileID: 0}
+    tintColor: {r: 1, g: 1, b: 1, a: 1}
+    useTintFallback: 0
+  damaged:
+    textureOverride: {fileID: 0}
+    damageMask: {fileID: 0}
+    tintColor: {r: 1, g: 1, b: 1, a: 1}
+    useTintFallback: 0
+  destroyed:
+    textureOverride: {fileID: 0}
+    damageMask: {fileID: 0}
+    tintColor: {r: 1, g: 1, b: 1, a: 1}
+    useTintFallback: 0
+  baseMapProperty: _BaseMap
+  legacyBaseMapProperty: _MainTex
+  baseColorProperty: _BaseColor
+  legacyColorProperty: _Color
+  damageMaskProperty: _DamageMask
+  transitionDuration: 0

@@ -1,10 +1,12 @@
 ﻿<Solution>
+  <Project Path="SenCity.Core.csproj" />
   <Project Path="SenCity.FurniturePlacement.EditModeTests.csproj" />
   <Project Path="SenCity.FurniturePlacement.Editor.csproj" />
   <Project Path="SenCity.FurniturePlacement.csproj" />
+  <Project Path="SenCity.Project.csproj" />
   <Project Path="SenCity.PetNpc.Editor.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
-  <Project Path="SenCity.Core.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
-  <Project Path="SenCity.Project.csproj" />
+  <Project Path="SenCity.Core.Editor.csproj" />
+  <Project Path="SenCity.DamageVisual.EditModeTests.csproj" />
 </Solution>

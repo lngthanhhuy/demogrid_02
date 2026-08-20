@@ -1,0 +1,21 @@
+{
+    "name": "SenCity.DamageVisual.EditModeTests",
+    "rootNamespace": "SenCity.Tests.DamageVisual",
+    "references": [
+        "SenCity.Core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false,
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}

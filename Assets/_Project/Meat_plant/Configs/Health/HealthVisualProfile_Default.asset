@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf54b67244e28f744991b4586c07497e, type: 3}
+  m_Name: HealthVisualProfile_Default
+  m_EditorClassIdentifier: SenCity.Project::MeatPlant.HealthVisualProfile
+  visuals:
+  - state: 0
+    material: {fileID: 0}
+    tint: {r: 0.00822042, g: 0.735849, b: 0, a: 1}
+    useTint: 1
+  - state: 1
+    material: {fileID: 0}
+    tint: {r: 0.7817249, g: 0.8867924, b: 0.24679601, a: 1}
+    useTint: 1
+  - state: 2
+    material: {fileID: 0}
+    tint: {r: 0.6415094, g: 0.56637704, b: 0.003025995, a: 1}
+    useTint: 1

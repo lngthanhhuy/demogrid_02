@@ -18,7 +18,7 @@ namespace SenCity.Features.FurniturePlacement.Editor
 {
     public static class SenCityMvpSceneBuilder
     {
-        public const int SceneVersion = 4;
+        public const int SceneVersion = 5;
         public const string SceneVersionPath = "Assets/_Project/Production/SenCityMvp.version.txt";
         private const string ScenePath = "Assets/_Project/Production/SenCityMvp.unity";
         private const string GridPath = "Assets/_Project/Features/FurniturePlacement/Data/SenCityPlacementGrid.asset";
@@ -32,6 +32,15 @@ namespace SenCity.Features.FurniturePlacement.Editor
         private const string RoundSpritePath = UiFolder + "/rounded-ui.png";
         private const string RenderTexturePath = UiFolder + "/StudioRoom.renderTexture";
         private const string CatModelPath = "Assets/_Project/Art/Pets/Cat/Cat.fbx";
+
+        // Landscape UI design reference: 1280 x 720.
+        private const float DesignWidth = 1280f;
+        private const float DesignHeight = 720f;
+        private const float HeaderHeight = 76f;
+        private const float ContentPadding = 24f;
+        private const float SidePanelWidth = 390f;
+        private const float RoomWidth = 818f;
+        private const float RoomHeight = 596f;
 
         private static readonly Color Background = Hex("DBA1BA");
         private static readonly Color TopPanel = Hex("E8B2C9");
@@ -88,7 +97,7 @@ namespace SenCity.Features.FurniturePlacement.Editor
             AssetDatabase.ImportAsset(SceneVersionPath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log($"[SenCityMvpSceneBuilder] Built portrait MVP scene at {ScenePath}");
+            Debug.Log($"[SenCityMvpSceneBuilder] Built landscape MVP scene at {ScenePath}");
         }
 
         private static void EnsureUiAssets()
@@ -327,7 +336,6 @@ namespace SenCity.Features.FurniturePlacement.Editor
             surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
             surface.BuildNavMesh();
         }
-
         private static RectTransform BuildUiHierarchy(
             FurniturePlacementRuntime runtime,
             FurnitureCatalogDefinition catalog,
@@ -339,38 +347,48 @@ namespace SenCity.Features.FurniturePlacement.Editor
             eventSystem.AddComponent<EventSystem>();
             eventSystem.AddComponent<InputSystemUIInputModule>().AssignDefaultActions();
 
-            GameObject canvasObject = new GameObject("Canvas_UI", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            GameObject canvasObject = new GameObject(
+                "Canvas_MainStudio",
+                typeof(RectTransform),
+                typeof(Canvas),
+                typeof(CanvasScaler),
+                typeof(GraphicRaycaster));
+
             Canvas canvas = canvasObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.pixelPerfect = true;
+            canvas.pixelPerfect = false;
+
             CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(390f, 844f);
+            scaler.referenceResolution = new Vector2(DesignWidth, DesignHeight);
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 0f;
+            scaler.matchWidthOrHeight = 0.5f;
 
             GameObject safeArea = CreateRect(canvasObject.transform, "SafeArea");
             Stretch(safeArea.GetComponent<RectTransform>());
             safeArea.AddComponent<SenCitySafeArea>();
 
-            GameObject frame = CreateRect(safeArea.transform, "DesignFrame_390x844");
+            // CanvasScaler is the single source of truth for UI scaling.
+            // Do NOT constrain this root to another 16:9 viewport:
+            // AspectRatioFitter + SafeArea can create black bars and clip
+            // the right-side panel on landscape Android devices.
+            GameObject frame = CreateRect(safeArea.transform, "DesignFrame_1280x720");
             Stretch(frame.GetComponent<RectTransform>());
-            AspectRatioFitter fitter = frame.AddComponent<AspectRatioFitter>();
-            fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
-            fitter.aspectRatio = 390f / 844f;
-            frame.AddComponent<RectMask2D>();
 
-            GameObject screens = CreateRect(frame.transform, "Screens");
+            GameObject screens = CreateRect(frame.transform, "ScreenStack");
             Stretch(screens.GetComponent<RectTransform>());
+
             GameObject main = BuildMainStudio(screens.transform);
             RectTransform interactionRect;
             GameObject build = BuildBuildDrawer(screens.transform, runtime, catalog, roomTexture, out interactionRect);
             GameObject pet = BuildPetCard(screens.transform);
 
-            GameObject overlays = CreateRect(frame.transform, "Overlays");
+            GameObject overlays = CreateRect(frame.transform, "OverlayStack");
             Stretch(overlays.GetComponent<RectTransform>());
+
             GameObject loading = BuildLoadingOverlay(overlays.transform);
             GameObject onboarding = BuildOnboardingOverlay(overlays.transform, out Button startButton);
+
             GameObject selectionPopup = BuildSelectionPopup(
                 overlays.transform,
                 out Text selectedItemName,
@@ -379,30 +397,53 @@ namespace SenCity.Features.FurniturePlacement.Editor
                 out Button rotateSelected,
                 out Button deleteSelected,
                 out Button closeSelection);
+
             GameObject deleteConfirmation = BuildDeleteConfirmation(
                 overlays.transform,
                 out Button confirmDelete,
                 out Button cancelDelete);
+
             GameObject exitConfirmation = BuildExitConfirmation(
                 overlays.transform,
                 out Button confirmExit,
                 out Button cancelExit);
-            GameObject toast = CreatePanel(overlays.transform, "Toast", Hex("59313F"), 45f, 774f, 300f, 44f);
-            Text toastText = CreateText(toast.transform, "Message", string.Empty, Color.white, 11, 10f, 4f, 280f, 36f, TextAnchor.MiddleCenter, false);
 
-            Button buildButton = main.transform.Find("BuildShortcut")?.GetComponent<Button>();
-            Button focusButton = main.transform.Find("FocusButton")?.GetComponent<Button>();
-            Button petButton = main.transform.Find("PetShortcut")?.GetComponent<Button>();
-            Button buildBackButton = build.transform.Find("BackButton")?.GetComponent<Button>();
-            Button petBackButton = pet.transform.Find("BackToStudio")?.GetComponent<Button>();
-            Button placeButton = build.transform.Find("Drawer/PlaceSelectedItem")?.GetComponent<Button>();
-            Button rotateButton = build.transform.Find("Drawer/Rotate")?.GetComponent<Button>();
-            Button cancelButton = build.transform.Find("Drawer/Cancel")?.GetComponent<Button>();
-            Text placementStatus = build.transform.Find("Drawer/PlacementStatus")?.GetComponent<Text>();
-            Text petState = pet.transform.Find("PetState")?.GetComponent<Text>();
+            GameObject toast = CreatePanel(
+                overlays.transform,
+                "Overlay_Toast",
+                Hex("59313F"),
+                430f,
+                650f,
+                420f,
+                44f);
+
+            Text toastText = CreateText(
+                toast.transform,
+                "Text_ToastMessage",
+                string.Empty,
+                Color.white,
+                11,
+                10f,
+                4f,
+                400f,
+                36f,
+                TextAnchor.MiddleCenter,
+                false);
+
+            Button buildButton = main.transform.Find("Button_BuildShortcut")?.GetComponent<Button>();
+            Button focusButton = main.transform.Find("Button_FocusSession")?.GetComponent<Button>();
+            Button petButton = main.transform.Find("Button_PetShortcut")?.GetComponent<Button>();
+            Button buildBackButton = build.transform.Find("Button_BackToStudio")?.GetComponent<Button>();
+            Button petBackButton = pet.transform.Find("Button_BackToStudio")?.GetComponent<Button>();
+            Button placeButton = build.transform.Find("Container_InventoryDrawer/Button_ConfirmPlacement")?.GetComponent<Button>();
+            Button rotateButton = build.transform.Find("Container_InventoryDrawer/Button_RotatePlacement")?.GetComponent<Button>();
+            Button cancelButton = build.transform.Find("Container_InventoryDrawer/Button_CancelPlacement")?.GetComponent<Button>();
+            Text placementStatus = build.transform.Find("Container_InventoryDrawer/Text_PlacementStatus")?.GetComponent<Text>();
+            Text petState = pet.transform.Find("Text_PetState")?.GetComponent<Text>();
 
             SenCityRoomCameraFocus cameraFocus = canvasObject.AddComponent<SenCityRoomCameraFocus>();
             SetObject(cameraFocus, "roomCamera", roomCamera);
+
             SenCityMvpFlowController flow = canvasObject.AddComponent<SenCityMvpFlowController>();
             SetObject(flow, "loadingPanel", loading);
             SetObject(flow, "onboardingPanel", onboarding);
@@ -430,9 +471,9 @@ namespace SenCity.Features.FurniturePlacement.Editor
             SetObject(flow, "confirmDeleteButton", confirmDelete);
             SetObject(flow, "cancelDeleteButton", cancelDelete);
             SetObject(flow, "placementStatusText", placementStatus);
-            SetObject(flow, "feedButton", pet.transform.Find("Feed")?.GetComponent<Button>());
-            SetObject(flow, "playButton", pet.transform.Find("Play")?.GetComponent<Button>());
-            SetObject(flow, "sleepButton", pet.transform.Find("Sleep")?.GetComponent<Button>());
+            SetObject(flow, "feedButton", pet.transform.Find("Button_FeedPet")?.GetComponent<Button>());
+            SetObject(flow, "playButton", pet.transform.Find("Button_PlayWithPet")?.GetComponent<Button>());
+            SetObject(flow, "sleepButton", pet.transform.Find("Button_SleepPet")?.GetComponent<Button>());
             SetObject(flow, "petControllerSource", petController);
             SetObject(flow, "confirmExitButton", confirmExit);
             SetObject(flow, "cancelExitButton", cancelExit);
@@ -449,37 +490,234 @@ namespace SenCity.Features.FurniturePlacement.Editor
             deleteConfirmation.SetActive(false);
             exitConfirmation.SetActive(false);
             toast.SetActive(false);
+
             if (placeButton != null) placeButton.interactable = false;
             if (rotateButton != null) rotateButton.interactable = false;
             if (cancelButton != null) cancelButton.interactable = false;
+
             return interactionRect;
         }
-
         private static GameObject BuildMainStudio(Transform parent)
         {
-            GameObject screen = CreatePanel(parent, "MainStudioScreen", Background, 0f, 0f, 390f, 844f, false);
-            CreatePanel(screen.transform, "TopGradientPanel", TopPanel, 0f, 0f, 390f, 150f, false);
-            CreateText(screen.transform, "StatusTime", "09:39 PM     Fri 6 May", Hex("73475C"), 11, 22f, 15f, 180f, 22f, TextAnchor.MiddleLeft, true);
-            CreateImage(screen.transform, "Avatar", AssetDatabase.LoadAssetAtPath<Sprite>(AvatarImagePath), 22f, 50f, 40f, 40f);
-            CreateText(screen.transform, "AvatarInitial", "S", Hex("7A4A57"), 17, 22f, 55f, 40f, 30f, TextAnchor.MiddleCenter, true);
-            CreatePanel(screen.transform, "CoinPill", Hex("FFEDD6"), 126f, 52f, 102f, 34f);
-            CreateText(screen.transform, "CoinText", "●  9,999", Ink, 12, 136f, 56f, 82f, 26f, TextAnchor.MiddleCenter, true);
-            CreatePanel(screen.transform, "EnergyPill", Hex("FFEDD6"), 237f, 52f, 102f, 34f);
-            CreateText(screen.transform, "EnergyText", "♧  9,999", Ink, 12, 247f, 56f, 82f, 26f, TextAnchor.MiddleCenter, true);
-            CreateImage(screen.transform, "Settings", AssetDatabase.LoadAssetAtPath<Sprite>(SettingsImagePath), 347f, 51f, 36f, 36f);
-            CreatePanel(screen.transform, "FocusBanner", Banner, 28f, 112f, 334f, 28f);
-            CreateText(screen.transform, "FocusBannerText", "✦  Good work — 60 days focused!  ✦", AccentText, 11, 40f, 114f, 310f, 24f, TextAnchor.MiddleCenter, true);
-            CreateText(screen.transform, "StudioTitle", "Studio 01", Ink, 20, 28f, 168f, 334f, 30f, TextAnchor.MiddleLeft, true);
-            CreateText(screen.transform, "StudioSubtitle", "Level 1  ·  Cozy beginnings", Muted, 11, 28f, 197f, 334f, 20f, TextAnchor.MiddleLeft, false);
-            CreatePanel(screen.transform, "RoomOuterFrame", DarkWood, 25f, 232f, 340f, 430f);
-            CreatePanel(screen.transform, "RoomWoodFrame", Wood, 32f, 239f, 326f, 416f);
-            CreateImage(screen.transform, "RoomInterior", AssetDatabase.LoadAssetAtPath<Sprite>(RoomImagePath), 43f, 250f, 304f, 394f);
-            CreateButton(screen.transform, "BuildShortcut", "⌂\nHome", Cream, AccentText, 10, 28f, 688f, 64f, 54f);
-            CreateButton(screen.transform, "FocusButton", "✦  Focus\nStart a calm session", Lime, LimeText, 12, 103f, 685f, 184f, 62f);
-            CreateButton(screen.transform, "PetShortcut", "Paw\nPet", Cream, AccentText, 10, 296f, 688f, 66f, 54f);
+            GameObject screen = CreatePanel(
+                parent,
+                "MainStudio",
+                Background,
+                0f,
+                0f,
+                DesignWidth,
+                DesignHeight,
+                false);
+
+            // Header
+            CreatePanel(screen.transform, "HeaderBackground", TopPanel, 0f, 0f, DesignWidth, HeaderHeight, false);
+
+            CreateImage(
+                screen.transform,
+                "Image_Avatar",
+                AssetDatabase.LoadAssetAtPath<Sprite>(AvatarImagePath),
+                24f,
+                18f,
+                40f,
+                40f);
+
+            CreateText(
+                screen.transform,
+                "Text_AvatarInitial",
+                "S",
+                Hex("7A4A57"),
+                17,
+                24f,
+                23f,
+                40f,
+                30f,
+                TextAnchor.MiddleCenter,
+                true);
+
+            CreateText(
+                screen.transform,
+                "Text_StatusTime",
+                "09:39 PM     Fri 6 May",
+                Hex("73475C"),
+                10,
+                78f,
+                16f,
+                180f,
+                20f,
+                TextAnchor.MiddleLeft,
+                true);
+
+            CreateText(
+                screen.transform,
+                "Text_StudioHeaderTitle",
+                "Studio 01",
+                Ink,
+                18,
+                78f,
+                37f,
+                180f,
+                26f,
+                TextAnchor.MiddleLeft,
+                true);
+
+            CreatePanel(screen.transform, "Panel_CoinCurrency", Hex("FFEDD6"), 900f, 20f, 105f, 34f);
+            CreateText(screen.transform, "Text_CoinAmount", "●  9,999", Ink, 11, 908f, 24f, 89f, 26f, TextAnchor.MiddleCenter, true);
+
+            CreatePanel(screen.transform, "Panel_EnergyCurrency", Hex("FFEDD6"), 1015f, 20f, 105f, 34f);
+            CreateText(screen.transform, "Text_EnergyAmount", "♧  9,999", Ink, 11, 1023f, 24f, 89f, 26f, TextAnchor.MiddleCenter, true);
+
+            CreateImage(
+                screen.transform,
+                "Icon_Settings",
+                AssetDatabase.LoadAssetAtPath<Sprite>(SettingsImagePath),
+                1150f,
+                18f,
+                40f,
+                40f);
+
+            // Main content: large room on the left, information/actions on the right.
+            float roomX = ContentPadding;
+            float roomY = HeaderHeight + ContentPadding;
+            float roomW = RoomWidth;
+            float roomH = RoomHeight;
+
+            CreatePanel(screen.transform, "Panel_RoomOuterFrame", DarkWood, roomX, roomY, roomW, roomH);
+            CreatePanel(screen.transform, "Panel_RoomWoodFrame", Wood, roomX + 8f, roomY + 8f, roomW - 16f, roomH - 16f);
+
+            CreateImage(
+                screen.transform,
+                "Image_RoomInterior",
+                AssetDatabase.LoadAssetAtPath<Sprite>(RoomImagePath),
+                roomX + 20f,
+                roomY + 20f,
+                roomW - 40f,
+                roomH - 40f);
+
+            float infoX = roomX + roomW + ContentPadding;
+            float infoW = DesignWidth - infoX - ContentPadding;
+
+            CreatePanel(screen.transform, "Panel_StudioInfo", Cream, infoX, roomY, infoW, roomH);
+
+            CreatePanel(screen.transform, "Panel_FocusStreak", Banner, infoX + 18f, roomY + 18f, infoW - 36f, 36f);
+            CreateText(
+                screen.transform,
+                "Text_FocusStreak",
+                "✦  Good work — 60 days focused!  ✦",
+                AccentText,
+                10,
+                infoX + 28f,
+                roomY + 24f,
+                infoW - 56f,
+                24f,
+                TextAnchor.MiddleCenter,
+                true);
+
+            CreateText(
+                screen.transform,
+                "Text_StudioTitle",
+                "Studio 01",
+                Ink,
+                19,
+                infoX + 20f,
+                roomY + 72f,
+                infoW - 40f,
+                30f,
+                TextAnchor.MiddleLeft,
+                true);
+
+            CreateText(
+                screen.transform,
+                "Text_StudioSubtitle",
+                "Level 1  ·  Cozy beginnings",
+                Muted,
+                10,
+                infoX + 20f,
+                roomY + 103f,
+                infoW - 40f,
+                20f,
+                TextAnchor.MiddleLeft,
+                false);
+
+            CreateText(
+                screen.transform,
+                "Text_MochiSummary",
+                "Mochi",
+                Ink,
+                16,
+                infoX + 20f,
+                roomY + 150f,
+                infoW - 40f,
+                24f,
+                TextAnchor.MiddleLeft,
+                true);
+
+            CreateText(
+                screen.transform,
+                "Text_MochiSummaryState",
+                "Curious · happy · wants to play",
+                Muted,
+                9,
+                infoX + 20f,
+                roomY + 177f,
+                infoW - 40f,
+                20f,
+                TextAnchor.MiddleLeft,
+                false);
+
+            CreateMeter(screen.transform, "Mood", infoX + 20f, roomY + 218f, 0.86f, Lime);
+            CreateMeter(screen.transform, "Energy", infoX + 145f, roomY + 218f, 0.68f, Lime);
+
+            CreateButton(
+                screen.transform,
+                "Button_BuildShortcut",
+                "⌂  Build",
+                Lime,
+                LimeText,
+                11,
+                infoX + 20f,
+                roomY + 278f,
+                infoW - 40f,
+                52f);
+
+            CreateButton(
+                screen.transform,
+                "Button_FocusSession",
+                "✦  Focus  ·  Start a calm session",
+                Cream,
+                AccentText,
+                10,
+                infoX + 20f,
+                roomY + 340f,
+                infoW - 40f,
+                52f);
+
+            CreateButton(
+                screen.transform,
+                "Button_PetShortcut",
+                "♡  Mochi",
+                TabPink,
+                Ink,
+                11,
+                infoX + 20f,
+                roomY + 402f,
+                infoW - 40f,
+                52f);
+
+            CreateText(
+                screen.transform,
+                "Text_RoomHint",
+                "Decorate your room and keep the session calm.",
+                Muted,
+                9,
+                infoX + 20f,
+                roomY + 476f,
+                infoW - 40f,
+                40f,
+                TextAnchor.MiddleCenter,
+                false);
+
             return screen;
         }
-
         private static GameObject BuildBuildDrawer(
             Transform parent,
             FurniturePlacementRuntime runtime,
@@ -487,81 +725,447 @@ namespace SenCity.Features.FurniturePlacement.Editor
             RenderTexture roomTexture,
             out RectTransform interactionRect)
         {
-            GameObject screen = CreatePanel(parent, "BuildDrawerScreen", Background, 0f, 0f, 390f, 844f, false);
-            CreatePanel(screen.transform, "RoomPreview", Hex("F5E0C7"), 28f, 28f, 334f, 390f);
-            CreatePanel(screen.transform, "RoomPreviewBorder", Wood, 38f, 38f, 314f, 370f);
-            CreateText(screen.transform, "PreviewTitle", "Studio 01", Ink, 18, 50f, 52f, 240f, 28f, TextAnchor.MiddleLeft, true);
-            CreateText(screen.transform, "PreviewSubtitle", "Preview mode · drag on the room to place", Muted, 10, 50f, 82f, 280f, 20f, TextAnchor.MiddleLeft, false);
-            Button back = CreateButton(screen.transform, "BackButton", "‹", Cream, AccentText, 22, 306f, 50f, 34f, 34f);
+            GameObject screen = CreatePanel(
+                parent,
+                "BuildDrawer",
+                Background,
+                0f,
+                0f,
+                DesignWidth,
+                DesignHeight,
+                false);
+
+            CreatePanel(screen.transform, "HeaderBackground", TopPanel, 0f, 0f, DesignWidth, HeaderHeight, false);
+
+            CreateText(
+                screen.transform,
+                "Text_PreviewTitle",
+                "Decorate Studio 01",
+                Ink,
+                20,
+                28f,
+                17f,
+                360f,
+                30f,
+                TextAnchor.MiddleLeft,
+                true);
+
+            CreateText(
+                screen.transform,
+                "Text_PreviewSubtitle",
+                "Preview mode · drag on the room to place",
+                Muted,
+                10,
+                28f,
+                46f,
+                430f,
+                18f,
+                TextAnchor.MiddleLeft,
+                false);
+
+            Button back = CreateButton(
+                screen.transform,
+                "Button_BackToStudio",
+                "‹  Back",
+                Cream,
+                AccentText,
+                11,
+                1130f,
+                18f,
+                120f,
+                40f);
             back.navigation = new Navigation { mode = Navigation.Mode.None };
-            RawImage rawImage = CreateRawImage(screen.transform, "Room3DViewport", roomTexture, 48f, 108f, 294f, 288f);
+
+            float roomX = ContentPadding;
+            float roomY = HeaderHeight + ContentPadding;
+            float roomW = RoomWidth;
+            float roomH = RoomHeight;
+
+            CreatePanel(screen.transform, "Panel_RoomPreview", Hex("F5E0C7"), roomX, roomY, roomW, roomH);
+            CreatePanel(screen.transform, "Panel_RoomPreviewBorder", Wood, roomX + 8f, roomY + 8f, roomW - 16f, roomH - 16f);
+
+            RawImage rawImage = CreateRawImage(
+                screen.transform,
+                "Image_Room3DViewport",
+                roomTexture,
+                roomX + 20f,
+                roomY + 20f,
+                roomW - 40f,
+                roomH - 40f);
+
             interactionRect = rawImage.rectTransform;
 
-            GameObject drawer = CreatePanel(screen.transform, "Drawer", PalePink, 0f, 365f, 390f, 479f);
-            CreatePanel(drawer.transform, "Handle", Hex("C794A1"), 169f, 17f, 52f, 5f);
-            CreateText(drawer.transform, "Title", "Decorate your Studio", Ink, 19, 26f, 37f, 334f, 30f, TextAnchor.MiddleLeft, true);
-            CreateText(drawer.transform, "Subtitle", "42 items available", Muted, 11, 26f, 67f, 334f, 18f, TextAnchor.MiddleLeft, false);
-            CreateButton(drawer.transform, "FurnitureTab", "Furniture", Lime, LimeText, 11, 26f, 104f, 105f, 34f);
-            CreateButton(drawer.transform, "DecorationTab", "Decoration", TabPink, Ink, 10, 139f, 104f, 105f, 34f);
-            CreateButton(drawer.transform, "WallTab", "Wall", TabPink, Ink, 11, 252f, 104f, 105f, 34f);
+            float drawerX = roomX + roomW + ContentPadding;
+            float drawerW = DesignWidth - drawerX - ContentPadding;
+
+            GameObject drawer = CreatePanel(
+                screen.transform,
+                "Container_InventoryDrawer",
+                PalePink,
+                drawerX,
+                roomY,
+                drawerW,
+                roomH);
+
+            CreatePanel(drawer.transform, "Panel_DrawerHandle", Hex("C794A1"), drawerW - 12f, 22f, 5f, 52f);
+
+            CreateText(
+                drawer.transform,
+                "Text_DrawerTitle",
+                "Furniture",
+                Ink,
+                18,
+                20f,
+                22f,
+                drawerW - 40f,
+                28f,
+                TextAnchor.MiddleLeft,
+                true);
+
+            CreateText(
+                drawer.transform,
+                "Text_DrawerSubtitle",
+                "42 items available",
+                Muted,
+                10,
+                20f,
+                51f,
+                drawerW - 40f,
+                20f,
+                TextAnchor.MiddleLeft,
+                false);
+
+            float tabGap = 8f;
+            float tabW = (drawerW - 40f - tabGap * 2f) / 3f;
+
+            CreateButton(drawer.transform, "Button_FurnitureTab", "Furniture", Lime, LimeText, 9, 20f, 82f, tabW, 34f);
+            CreateButton(drawer.transform, "Button_DecorationTab", "Decoration", TabPink, Ink, 9, 20f + tabW + tabGap, 82f, tabW, 34f);
+            CreateButton(drawer.transform, "Button_WallTab", "Wall", TabPink, Ink, 9, 20f + (tabW + tabGap) * 2f, 82f, tabW, 34f);
 
             catalog.TryGetItem("demo_sofa", out FurnitureItemDefinition sofa);
             catalog.TryGetItem("demo_low_table", out FurnitureItemDefinition table);
             catalog.TryGetItem("demo_balcony_planter", out FurnitureItemDefinition plant);
-            CreateItemCard(drawer.transform, runtime, sofa, "Sofa", "◆ 1,200", "▰", 26f);
-            CreateItemCard(drawer.transform, runtime, table, "Coffee Table", "◆ 680", "○", 133f);
-            CreateItemCard(drawer.transform, runtime, plant, "Plant", "◆ 420", "Leaf", 240f);
-            CreateText(drawer.transform, "PlacementStatus", "Tap a card or select furniture in the room.", Muted, 10, 36f, 302f, 318f, 18f, TextAnchor.MiddleCenter, false);
-            CreateButton(drawer.transform, "PlaceSelectedItem", "Confirm placement", Lime, LimeText, 12, 96f, 329f, 198f, 48f);
-            CreateButton(drawer.transform, "Rotate", "Rotate 90° (R)", TabPink, Ink, 9, 26f, 392f, 92f, 34f);
-            CreateButton(drawer.transform, "Cancel", "Cancel", TabPink, Ink, 10, 272f, 392f, 92f, 34f);
-            CreateText(drawer.transform, "TouchHint", "Drag • pinch to zoom • green is valid", Muted, 8, 116f, 398f, 160f, 24f, TextAnchor.MiddleCenter, false);
+
+            float cardGap = 10f;
+            float cardW = (drawerW - 40f - cardGap * 2f) / 3f;
+
+            CreateItemCard(drawer.transform, runtime, sofa, "Sofa", "◆ 1,200", "▰", 20f, 132f, cardW);
+            CreateItemCard(drawer.transform, runtime, table, "Coffee Table", "◆ 680", "○", 20f + cardW + cardGap, 132f, cardW);
+            CreateItemCard(drawer.transform, runtime, plant, "Plant", "◆ 420", "Leaf", 20f + (cardW + cardGap) * 2f, 132f, cardW);
+
+            CreateText(
+                drawer.transform,
+                "Text_PlacementStatus",
+                "Select an item, then drag it in the room.",
+                Muted,
+                9,
+                20f,
+                290f,
+                drawerW - 40f,
+                34f,
+                TextAnchor.MiddleCenter,
+                false);
+
+            CreateButton(
+                drawer.transform,
+                "Button_ConfirmPlacement",
+                "Confirm placement",
+                Lime,
+                LimeText,
+                11,
+                20f,
+                338f,
+                drawerW - 40f,
+                48f);
+
+            CreateButton(
+                drawer.transform,
+                "Button_RotatePlacement",
+                "Rotate 90° (R)",
+                TabPink,
+                Ink,
+                9,
+                20f,
+                400f,
+                (drawerW - 50f) * 0.5f,
+                38f);
+
+            CreateButton(
+                drawer.transform,
+                "Button_CancelPlacement",
+                "Cancel",
+                TabPink,
+                Ink,
+                10,
+                30f + (drawerW - 50f) * 0.5f,
+                400f,
+                (drawerW - 50f) * 0.5f,
+                38f);
+
+            CreateText(
+                drawer.transform,
+                "Text_TouchHint",
+                "Drag • pinch to zoom • green is valid",
+                Muted,
+                8,
+                20f,
+                455f,
+                drawerW - 40f,
+                24f,
+                TextAnchor.MiddleCenter,
+                false);
+
             return screen;
         }
-
         private static GameObject BuildPetCard(Transform parent)
         {
-            GameObject screen = CreatePanel(parent, "PetCardScreen", Background, 0f, 0f, 390f, 844f, false);
-            CreateText(screen.transform, "Title", "Your little neighbor", Ink, 20, 28f, 25f, 334f, 32f, TextAnchor.MiddleLeft, true);
-            CreateText(screen.transform, "Subtitle", "AI companion status and quick actions", Muted, 11, 28f, 55f, 334f, 22f, TextAnchor.MiddleLeft, false);
-            CreatePanel(screen.transform, "PetHeroCard", Cream, 24f, 100f, 342f, 232f);
-            CreateImage(screen.transform, "PetHero", AssetDatabase.LoadAssetAtPath<Sprite>(PetImagePath), 109f, 121f, 172f, 172f);
-            CreateText(screen.transform, "PetName", "Mochi", Ink, 18, 130f, 270f, 130f, 28f, TextAnchor.MiddleCenter, true);
-            CreateText(screen.transform, "PetMood", "Curious · happy · wants to play", Muted, 11, 70f, 298f, 250f, 20f, TextAnchor.MiddleCenter, false);
+            GameObject screen = CreatePanel(
+                parent,
+                "PetCard",
+                Background,
+                0f,
+                0f,
+                DesignWidth,
+                DesignHeight,
+                false);
 
-            CreatePanel(screen.transform, "StatusCard", PalePink, 24f, 355f, 342f, 144f);
-            CreateText(screen.transform, "StatusTitle", "Mochi today", Ink, 15, 44f, 371f, 280f, 24f, TextAnchor.MiddleLeft, true);
-            CreateText(screen.transform, "StatusSubtitle", "Last interaction · 4 min ago", Muted, 10, 44f, 397f, 280f, 18f, TextAnchor.MiddleLeft, false);
-            CreateMeter(screen.transform, "Mood", 44f, 428f, 0.86f, Lime);
-            CreateMeter(screen.transform, "Energy", 151f, 428f, 0.68f, Lime);
-            CreateMeter(screen.transform, "Hunger", 258f, 428f, 0.48f, Hunger);
-            CreateText(screen.transform, "ActionTitle", "What should Mochi do?", Ink, 15, 28f, 538f, 334f, 26f, TextAnchor.MiddleLeft, true);
-            CreateText(screen.transform, "PetState", "Ready for a calm session.", Muted, 10, 28f, 652f, 334f, 24f, TextAnchor.MiddleCenter, false);
-            CreateButton(screen.transform, "Feed", "♡\nFeed", Lime, LimeText, 11, 28f, 575f, 88f, 70f);
-            CreateButton(screen.transform, "Play", "✦\nPlay", Lime, LimeText, 11, 126f, 575f, 88f, 70f);
-            CreateButton(screen.transform, "Sleep", "☾\nSleep", Lime, LimeText, 11, 224f, 575f, 88f, 70f);
-            CreateButton(screen.transform, "BackToStudio", "Back to Studio", TabPink, Ink, 13, 93f, 692f, 204f, 50f);
+            CreatePanel(screen.transform, "HeaderBackground", TopPanel, 0f, 0f, DesignWidth, HeaderHeight, false);
+
+            CreateText(
+                screen.transform,
+                "Text_PetCardTitle",
+                "Mochi · Pet Companion",
+                Ink,
+                20,
+                28f,
+                17f,
+                400f,
+                30f,
+                TextAnchor.MiddleLeft,
+                true);
+
+            CreateText(
+                screen.transform,
+                "Text_PetCardSubtitle",
+                "AI companion status and quick actions",
+                Muted,
+                10,
+                28f,
+                46f,
+                400f,
+                18f,
+                TextAnchor.MiddleLeft,
+                false);
+
+            Button back = CreateButton(
+                screen.transform,
+                "Button_BackToStudio",
+                "Back to Studio",
+                Cream,
+                AccentText,
+                11,
+                1080f,
+                18f,
+                170f,
+                40f);
+            back.navigation = new Navigation { mode = Navigation.Mode.None };
+
+            float contentY = HeaderHeight + ContentPadding;
+            float contentH = DesignHeight - contentY - ContentPadding;
+
+            float heroX = ContentPadding;
+            float heroW = 700f;
+
+            CreatePanel(screen.transform, "Panel_PetHero", Cream, heroX, contentY, heroW, contentH);
+
+            CreateImage(
+                screen.transform,
+                "Image_PetHero",
+                AssetDatabase.LoadAssetAtPath<Sprite>(PetImagePath),
+                heroX + 110f,
+                contentY + 35f,
+                480f,
+                390f);
+
+            CreateText(
+                screen.transform,
+                "Text_PetName",
+                "Mochi",
+                Ink,
+                24,
+                heroX + 40f,
+                contentY + 425f,
+                heroW - 80f,
+                38f,
+                TextAnchor.MiddleCenter,
+                true);
+
+            CreateText(
+                screen.transform,
+                "Text_PetMood",
+                "Curious · happy · wants to play",
+                Muted,
+                11,
+                heroX + 40f,
+                contentY + 467f,
+                heroW - 80f,
+                24f,
+                TextAnchor.MiddleCenter,
+                false);
+
+            float statusX = heroX + heroW + ContentPadding;
+            float statusW = DesignWidth - statusX - ContentPadding;
+
+            CreatePanel(screen.transform, "Panel_PetStatus", PalePink, statusX, contentY, statusW, 220f);
+
+            CreateText(
+                screen.transform,
+                "Text_PetStatusTitle",
+                "Mochi today",
+                Ink,
+                17,
+                statusX + 20f,
+                contentY + 22f,
+                statusW - 40f,
+                28f,
+                TextAnchor.MiddleLeft,
+                true);
+
+            CreateText(
+                screen.transform,
+                "Text_PetStatusSubtitle",
+                "Last interaction · 4 min ago",
+                Muted,
+                10,
+                statusX + 20f,
+                contentY + 53f,
+                statusW - 40f,
+                20f,
+                TextAnchor.MiddleLeft,
+                false);
+
+            float meterW = (statusW - 60f) / 3f;
+            CreateMeter(screen.transform, "Mood", statusX + 20f, contentY + 92f, 0.86f, Lime);
+            CreateMeter(screen.transform, "Energy", statusX + 30f + meterW, contentY + 92f, 0.68f, Lime);
+            CreateMeter(screen.transform, "Hunger", statusX + 40f + meterW * 2f, contentY + 92f, 0.48f, Hunger);
+
+            CreateText(
+                screen.transform,
+                "Text_PetActionTitle",
+                "What should Mochi do?",
+                Ink,
+                16,
+                statusX,
+                contentY + 250f,
+                statusW,
+                28f,
+                TextAnchor.MiddleLeft,
+                true);
+
+            CreateButton(screen.transform, "Button_FeedPet", "♡  Feed", Lime, LimeText, 11, statusX, contentY + 300f, statusW, 48f);
+            CreateButton(screen.transform, "Button_PlayWithPet", "✦  Play", Lime, LimeText, 11, statusX, contentY + 358f, statusW, 48f);
+            CreateButton(screen.transform, "Button_SleepPet", "☾  Sleep", Lime, LimeText, 11, statusX, contentY + 416f, statusW, 48f);
+
+            CreateText(
+                screen.transform,
+                "Text_PetState",
+                "Ready for a calm session.",
+                Muted,
+                10,
+                statusX,
+                contentY + 474f,
+                statusW,
+                24f,
+                TextAnchor.MiddleCenter,
+                false);
+
             return screen;
         }
-
         private static GameObject BuildLoadingOverlay(Transform parent)
         {
-            GameObject overlay = CreatePanel(parent, "LoadingPanel", Background, 0f, 0f, 390f, 844f, false);
-            CreateText(overlay.transform, "Logo", "SEN CITY", Ink, 24, 45f, 330f, 300f, 50f, TextAnchor.MiddleCenter, true);
-            CreateText(overlay.transform, "Loading", "Preparing your cozy studio…", Muted, 12, 45f, 390f, 300f, 30f, TextAnchor.MiddleCenter, false);
+            GameObject overlay = CreatePanel(parent, "Overlay_Loading", Background, 0f, 0f, DesignWidth, DesignHeight, false);
+
+            CreateText(
+                overlay.transform,
+                "Text_BrandLogo",
+                "SEN CITY",
+                Ink,
+                30,
+                340f,
+                260f,
+                600f,
+                60f,
+                TextAnchor.MiddleCenter,
+                true);
+
+            CreateText(
+                overlay.transform,
+                "Text_LoadingStatus",
+                "Preparing your cozy studio…",
+                Muted,
+                13,
+                340f,
+                330f,
+                600f,
+                34f,
+                TextAnchor.MiddleCenter,
+                false);
+
             return overlay;
         }
-
         private static GameObject BuildOnboardingOverlay(Transform parent, out Button startButton)
         {
-            GameObject overlay = CreatePanel(parent, "OnboardingPanel", Background, 0f, 0f, 390f, 844f, false);
-            CreatePanel(overlay.transform, "WelcomeCard", Cream, 28f, 210f, 334f, 360f);
-            CreateText(overlay.transform, "Title", "Welcome to Sen City", Ink, 24, 48f, 260f, 294f, 50f, TextAnchor.MiddleCenter, true);
-            CreateText(overlay.transform, "Body", "Decorate Studio 01, focus calmly, and care for Mochi.", Muted, 13, 58f, 330f, 274f, 90f, TextAnchor.MiddleCenter, false);
-            startButton = CreateButton(overlay.transform, "Start", "Start your studio", Lime, LimeText, 13, 96f, 470f, 198f, 54f);
+            GameObject overlay = CreatePanel(parent, "Overlay_Onboarding", Background, 0f, 0f, DesignWidth, DesignHeight, false);
+
+            CreatePanel(
+                overlay.transform,
+                "Panel_WelcomeCard",
+                Cream,
+                300f,
+                150f,
+                680f,
+                420f);
+
+            CreateText(
+                overlay.transform,
+                "Text_OnboardingTitle",
+                "Welcome to Sen City",
+                Ink,
+                30,
+                350f,
+                220f,
+                580f,
+                55f,
+                TextAnchor.MiddleCenter,
+                true);
+
+            CreateText(
+                overlay.transform,
+                "Text_OnboardingBody",
+                "Decorate Studio 01, focus calmly, and care for Mochi.",
+                Muted,
+                14,
+                390f,
+                300f,
+                500f,
+                90f,
+                TextAnchor.MiddleCenter,
+                false);
+
+            startButton = CreateButton(
+                overlay.transform,
+                "Button_StartStudio",
+                "Start your studio",
+                Lime,
+                LimeText,
+                13,
+                490f,
+                425f,
+                300f,
+                58f);
+
             return overlay;
         }
-
         private static GameObject BuildSelectionPopup(
             Transform parent,
             out Text itemName,
@@ -571,46 +1175,100 @@ namespace SenCity.Features.FurniturePlacement.Editor
             out Button deleteButton,
             out Button closeButton)
         {
-            GameObject shade = CreatePanel(parent, "FurnitureSelectionPopup", new Color(0.18f, 0.09f, 0.14f, 0.32f), 0f, 0f, 390f, 844f, false);
-            GameObject card = CreatePanel(shade.transform, "Card", PalePink, 36f, 244f, 318f, 256f);
-            CreateText(card.transform, "Eyebrow", "SELECTED FURNITURE", Muted, 9, 24f, 20f, 240f, 18f, TextAnchor.MiddleLeft, true);
-            itemName = CreateText(card.transform, "ItemName", "Furniture", Ink, 20, 24f, 45f, 240f, 32f, TextAnchor.MiddleLeft, true);
-            itemDetails = CreateText(card.transform, "ItemDetails", "Grid position • Rotation", Muted, 10, 24f, 79f, 270f, 24f, TextAnchor.MiddleLeft, false);
-            moveButton = CreateButton(card.transform, "Move", "Move", Lime, LimeText, 11, 24f, 122f, 82f, 42f);
-            rotateButton = CreateButton(card.transform, "Rotate", "Rotate 90°", Lime, LimeText, 10, 118f, 122f, 82f, 42f);
-            deleteButton = CreateButton(card.transform, "Delete", "Delete", TabPink, Ink, 11, 212f, 122f, 82f, 42f);
-            closeButton = CreateButton(card.transform, "Close", "Close", Cream, AccentText, 11, 87f, 187f, 144f, 40f);
+            GameObject shade = CreatePanel(
+                parent,
+                "Overlay_FurnitureSelection",
+                new Color(0.18f, 0.09f, 0.14f, 0.32f),
+                0f,
+                0f,
+                DesignWidth,
+                DesignHeight,
+                false);
+
+            GameObject card = CreatePanel(
+                shade.transform,
+                "Panel_FurnitureSelectionCard",
+                PalePink,
+                360f,
+                205f,
+                560f,
+                310f);
+
+            CreateText(card.transform, "Text_SelectedFurnitureEyebrow", "SELECTED FURNITURE", Muted, 9, 28f, 22f, 500f, 18f, TextAnchor.MiddleLeft, true);
+            itemName = CreateText(card.transform, "Text_SelectedFurnitureName", "Furniture", Ink, 22, 28f, 50f, 500f, 36f, TextAnchor.MiddleLeft, true);
+            itemDetails = CreateText(card.transform, "Text_SelectedFurnitureDetails", "Grid position • Rotation", Muted, 10, 28f, 92f, 500f, 24f, TextAnchor.MiddleLeft, false);
+
+            moveButton = CreateButton(card.transform, "Button_MoveSelectedFurniture", "Move", Lime, LimeText, 11, 28f, 145f, 150f, 46f);
+            rotateButton = CreateButton(card.transform, "Button_RotateSelectedFurniture", "Rotate 90°", Lime, LimeText, 10, 205f, 145f, 150f, 46f);
+            deleteButton = CreateButton(card.transform, "Button_DeleteSelectedFurniture", "Delete", TabPink, Ink, 11, 382f, 145f, 150f, 46f);
+            closeButton = CreateButton(card.transform, "Button_CloseFurnitureSelection", "Close", Cream, AccentText, 11, 208f, 225f, 144f, 40f);
+
             return shade;
         }
-
         private static GameObject BuildDeleteConfirmation(
             Transform parent,
             out Button confirmButton,
             out Button cancelButton)
         {
-            GameObject shade = CreatePanel(parent, "DeleteFurnitureConfirmation", new Color(0.18f, 0.09f, 0.14f, 0.42f), 0f, 0f, 390f, 844f, false);
-            GameObject card = CreatePanel(shade.transform, "Card", Cream, 40f, 292f, 310f, 200f);
-            CreateText(card.transform, "Title", "Return this item to storage?", Ink, 18, 24f, 25f, 262f, 54f, TextAnchor.MiddleCenter, true);
-            CreateText(card.transform, "Body", "Its position will be removed from Studio 01.", Muted, 11, 30f, 82f, 250f, 38f, TextAnchor.MiddleCenter, false);
-            cancelButton = CreateButton(card.transform, "Cancel", "Keep it", TabPink, Ink, 11, 24f, 139f, 120f, 40f);
-            confirmButton = CreateButton(card.transform, "Confirm", "Return item", Lime, LimeText, 11, 166f, 139f, 120f, 40f);
+            GameObject shade = CreatePanel(
+                parent,
+                "Overlay_DeleteFurnitureConfirmation",
+                new Color(0.18f, 0.09f, 0.14f, 0.42f),
+                0f,
+                0f,
+                DesignWidth,
+                DesignHeight,
+                false);
+
+            GameObject card = CreatePanel(
+                shade.transform,
+                "Panel_DeleteFurnitureCard",
+                Cream,
+                390f,
+                235f,
+                500f,
+                250f);
+
+            CreateText(card.transform, "Text_DeleteFurnitureTitle", "Return this item to storage?", Ink, 20, 24f, 28f, 452f, 54f, TextAnchor.MiddleCenter, true);
+            CreateText(card.transform, "Text_DeleteFurnitureBody", "Its position will be removed from Studio 01.", Muted, 11, 40f, 92f, 420f, 38f, TextAnchor.MiddleCenter, false);
+
+            cancelButton = CreateButton(card.transform, "Button_CancelDeleteFurniture", "Keep it", TabPink, Ink, 11, 28f, 170f, 210f, 42f);
+            confirmButton = CreateButton(card.transform, "Button_ConfirmDeleteFurniture", "Return item", Lime, LimeText, 11, 262f, 170f, 210f, 42f);
+
             return shade;
         }
-
         private static GameObject BuildExitConfirmation(
             Transform parent,
             out Button confirmButton,
             out Button cancelButton)
         {
-            GameObject shade = CreatePanel(parent, "ExitConfirmation", new Color(0.18f, 0.09f, 0.14f, 0.42f), 0f, 0f, 390f, 844f, false);
-            GameObject card = CreatePanel(shade.transform, "Card", Cream, 40f, 300f, 310f, 188f);
-            CreateText(card.transform, "Title", "Leave Sen City?", Ink, 20, 24f, 29f, 262f, 40f, TextAnchor.MiddleCenter, true);
-            CreateText(card.transform, "Body", "Your room is saved automatically.", Muted, 11, 30f, 76f, 250f, 30f, TextAnchor.MiddleCenter, false);
-            cancelButton = CreateButton(card.transform, "Cancel", "Stay", TabPink, Ink, 11, 24f, 126f, 120f, 40f);
-            confirmButton = CreateButton(card.transform, "Confirm", "Exit", Lime, LimeText, 11, 166f, 126f, 120f, 40f);
+            GameObject shade = CreatePanel(
+                parent,
+                "Overlay_ExitConfirmation",
+                new Color(0.18f, 0.09f, 0.14f, 0.42f),
+                0f,
+                0f,
+                DesignWidth,
+                DesignHeight,
+                false);
+
+            GameObject card = CreatePanel(
+                shade.transform,
+                "Panel_ExitConfirmationCard",
+                Cream,
+                390f,
+                245f,
+                500f,
+                230f);
+
+            CreateText(card.transform, "Text_ExitConfirmationTitle", "Leave Sen City?", Ink, 22, 24f, 28f, 452f, 42f, TextAnchor.MiddleCenter, true);
+            CreateText(card.transform, "Text_ExitConfirmationBody", "Your room is saved automatically.", Muted, 11, 40f, 86f, 420f, 30f, TextAnchor.MiddleCenter, false);
+
+            cancelButton = CreateButton(card.transform, "Button_CancelExit", "Stay", TabPink, Ink, 11, 28f, 155f, 210f, 42f);
+            confirmButton = CreateButton(card.transform, "Button_ConfirmExit", "Exit", Lime, LimeText, 11, 262f, 155f, 210f, 42f);
+
             return shade;
         }
-
         private static void CreateItemCard(
             Transform parent,
             FurniturePlacementRuntime runtime,
@@ -618,23 +1276,84 @@ namespace SenCity.Features.FurniturePlacement.Editor
             string label,
             string price,
             string glyph,
-            float x)
+            float x,
+            float y,
+            float width)
         {
-            GameObject card = CreatePanel(parent, $"ItemCard_{label.Replace(" ", string.Empty)}", TabPink, x, 162f, 101f, 135f);
-            CreateText(card.transform, "Icon", glyph, Ink, 22, 10f, 9f, 81f, 32f, TextAnchor.MiddleCenter, true);
-            CreateText(card.transform, "Name", label, Ink, 10, 11f, 49f, 79f, 18f, TextAnchor.MiddleLeft, true);
-            CreateText(card.transform, "Price", price, Muted, 9, 11f, 75f, 79f, 16f, TextAnchor.MiddleLeft, false);
-            Button select = CreateButton(card.transform, "Select", "Select", Lime, LimeText, 9, 11f, 103f, 79f, 22f);
+            string itemToken = ToNameToken(label);
+
+            GameObject card = CreatePanel(
+                parent,
+                $"ItemCard_{itemToken}",
+                TabPink,
+                x,
+                y,
+                width,
+                140f);
+
+            CreateText(
+                card.transform,
+                $"Icon_{itemToken}",
+                glyph,
+                Ink,
+                18,
+                8f,
+                10f,
+                width - 16f,
+                30f,
+                TextAnchor.MiddleCenter,
+                true);
+
+            CreateText(
+                card.transform,
+                $"Text_{itemToken}Name",
+                label,
+                Ink,
+                9,
+                8f,
+                45f,
+                width - 16f,
+                22f,
+                TextAnchor.MiddleCenter,
+                true);
+
+            CreateText(
+                card.transform,
+                $"Text_{itemToken}Price",
+                price,
+                Muted,
+                8,
+                8f,
+                67f,
+                width - 16f,
+                18f,
+                TextAnchor.MiddleCenter,
+                false);
+
+            Button select = CreateButton(
+                card.transform,
+                $"Button_Select{itemToken}",
+                "Select",
+                Lime,
+                LimeText,
+                8,
+                8f,
+                94f,
+                width - 16f,
+                32f);
+
             FurnitureInventoryButton inventoryButton = select.gameObject.AddComponent<FurnitureInventoryButton>();
             inventoryButton.Configure(runtime, item, null);
             EditorUtility.SetDirty(inventoryButton);
         }
 
+
         private static void CreateMeter(Transform parent, string label, float x, float y, float amount, Color fillColor)
         {
-            CreateText(parent, $"{label}Label", label, Ink, 10, x, y, 80f, 18f, TextAnchor.MiddleLeft, true);
-            CreatePanel(parent, $"{label}Track", MeterTrack, x, y + 25f, 80f, 8f);
-            CreatePanel(parent, $"{label}Fill", fillColor, x, y + 25f, 80f * amount, 8f);
+            string meterToken = ToNameToken(label);
+            CreateText(parent, $"Text_{meterToken}Label", label, Ink, 10, x, y, 80f, 18f, TextAnchor.MiddleLeft, true);
+            CreatePanel(parent, $"Panel_{meterToken}MeterTrack", MeterTrack, x, y + 25f, 80f, 8f);
+            CreatePanel(parent, $"Panel_{meterToken}MeterFill", fillColor, x, y + 25f, 80f * amount, 8f);
         }
 
         private static GameObject CreateRect(Transform parent, string name)
@@ -668,7 +1387,7 @@ namespace SenCity.Features.FurniturePlacement.Editor
             colors.pressedColor = Color.Lerp(backgroundColor, Color.black, 0.08f);
             colors.disabledColor = new Color(backgroundColor.r, backgroundColor.g, backgroundColor.b, 0.45f);
             button.colors = colors;
-            Text text = CreateText(go.transform, "Text", label, textColor, fontSize, 0f, 0f, width, height, TextAnchor.MiddleCenter, true);
+            Text text = CreateText(go.transform, ToButtonLabelName(name), label, textColor, fontSize, 0f, 0f, width, height, TextAnchor.MiddleCenter, true);
             text.raycastTarget = false;
             return button;
         }
@@ -706,6 +1425,32 @@ namespace SenCity.Features.FurniturePlacement.Editor
             image.texture = texture;
             SetTopLeft(go.GetComponent<RectTransform>(), x, y, width, height);
             return image;
+        }
+
+        private static string ToButtonLabelName(string buttonName)
+        {
+            const string prefix = "Button_";
+            string token = buttonName.StartsWith(prefix)
+                ? buttonName.Substring(prefix.Length)
+                : buttonName;
+            return "Text_" + token + "Label";
+        }
+
+        private static string ToNameToken(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return "Item";
+
+            string[] parts = value.Split(' ');
+            string token = string.Empty;
+            foreach (string part in parts)
+            {
+                if (string.IsNullOrWhiteSpace(part))
+                    continue;
+                token += char.ToUpperInvariant(part[0]) + part.Substring(1);
+            }
+
+            return string.IsNullOrEmpty(token) ? "Item" : token;
         }
 
         private static void SetTopLeft(RectTransform rect, float x, float y, float width, float height)
@@ -779,17 +1524,25 @@ namespace SenCity.Features.FurniturePlacement.Editor
             serialized.ApplyModifiedProperties();
             EditorUtility.SetDirty(target);
         }
-
         private static void ConfigureAndroid()
         {
-            PlayerSettings.allowedAutorotateToPortrait = true;
+            // Android MVP uses landscape only.
+            PlayerSettings.allowedAutorotateToPortrait = false;
             PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
-            PlayerSettings.allowedAutorotateToLandscapeLeft = false;
-            PlayerSettings.allowedAutorotateToLandscapeRight = false;
-            PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
+            PlayerSettings.allowedAutorotateToLandscapeLeft = true;
+            PlayerSettings.allowedAutorotateToLandscapeRight = true;
+
+            // Keep the project default in landscape as well as the autorotation flags.
+            PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft;
+
+            PlayerSettings.SetScriptingBackend(
+                NamedBuildTarget.Android,
+                ScriptingImplementation.IL2CPP);
+
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel25;
             PlayerSettings.bundleVersion = "0.1.0";
         }
+
     }
 }

@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d187befb95a1c014982b1bba8864bfd4, type: 3}
+  m_Name: MeatPlant_Test
+  m_EditorClassIdentifier: SenCity.Project::MeatPlant.MeatPlantModelConfig
+  plantId: 'meatplant_test '
+  displayName: Meat Plant Test
+  growthStageModels:
+  - stage: 0
+    assetNumber: 0
+    model: {fileID: 5091700312698410621, guid: 95c27c14b9bdd4d49b22036cd9f27866, type: 3}
+  - stage: 1
+    assetNumber: 2
+    model: {fileID: 8737322263344262135, guid: 08aebe73c181e394d8c3eef7e6d6ccc7, type: 3}
+  - stage: 2
+    assetNumber: 3
+    model: {fileID: 7982271741197473607, guid: 270bc6682bcce6949b50e6bcb30b355b, type: 3}
+  - stage: 3
+    assetNumber: 4
+    model: {fileID: 4657083925732316192, guid: 5941cfdad0b4bee4db9a9c4988e089bd, type: 3}
+  - stage: 4
+    assetNumber: 5
+    model: {fileID: 987186038797743477, guid: b9e5611ba92db244da0112dd5dce1c4a, type: 3}
+  rendererBindings: []
+  defaultMaterials: []
+  healthVisualProfile: {fileID: 11400000, guid: 8f5aca5505b2d2d4386459634c00e5cd, type: 2}
+  scaleOverride: {x: 1, y: 1, z: 1}
+  colliderConfiguration:
+    useCollider: 1
+    center: {x: 0, y: 0, z: 0}
+    size: {x: 1, y: 1, z: 1}
+  effectAnchor: {fileID: 0}
+  uiAnchor: {fileID: 0}

@@ -1,7 +1,10 @@
 {
     "name": "SenCity.Core",
     "rootNamespace": "SenCity.Core",
-    "references": [],
+    "references": [
+        "Unity.TextMeshPro",
+        "Unity.ugui"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

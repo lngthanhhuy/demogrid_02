@@ -8,5 +8,6 @@ Current demo set:
 - `Table/table.prefab`
 - `Planter/plant_ver1.0.0.prefab`
 - `Sofa/fn_sofa_scandinavian_01.prefab`
+- `PetSleepingMatOval/fn_furn_pet_sleeping_mat_oval_01.prefab`
 
 Keep model imports small and separated from gameplay behavior PRs. Heavy binaries are tracked by Git LFS through the root `.gitattributes`.

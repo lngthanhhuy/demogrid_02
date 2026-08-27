@@ -11,19 +11,19 @@ namespace SenCity.Features.FurniturePlacement
 
         private void OnEnable()
         {
-            LockPortraitOrientation();
+            LockLandscapeOrientation();
             target = GetComponent<RectTransform>();
             Apply();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void LockPortraitOrientation()
+        private static void LockLandscapeOrientation()
         {
-            Screen.autorotateToPortrait = true;
+            Screen.autorotateToPortrait = false;
             Screen.autorotateToPortraitUpsideDown = false;
-            Screen.autorotateToLandscapeLeft = false;
-            Screen.autorotateToLandscapeRight = false;
-            Screen.orientation = ScreenOrientation.Portrait;
+            Screen.autorotateToLandscapeLeft = true;
+            Screen.autorotateToLandscapeRight = true;
+            Screen.orientation = ScreenOrientation.LandscapeRight;
         }
 
         private void Update()

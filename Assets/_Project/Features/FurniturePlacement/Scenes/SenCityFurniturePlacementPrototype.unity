@@ -698,6 +698,63 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 241919361}
   m_CullTransparentMesh: 1
+--- !u!1001 &299685451
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: ba67440814bef5446a775ba2deb9fcb7, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 7.309942
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ba67440814bef5446a775ba2deb9fcb7, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -9.930291e-10
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ba67440814bef5446a775ba2deb9fcb7, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.89752626
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ba67440814bef5446a775ba2deb9fcb7, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ba67440814bef5446a775ba2deb9fcb7, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ba67440814bef5446a775ba2deb9fcb7, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ba67440814bef5446a775ba2deb9fcb7, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ba67440814bef5446a775ba2deb9fcb7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ba67440814bef5446a775ba2deb9fcb7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ba67440814bef5446a775ba2deb9fcb7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: ba67440814bef5446a775ba2deb9fcb7, type: 3}
+      propertyPath: m_Name
+      value: fn_furn_pet_sleeping_mat_oval_01
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: ba67440814bef5446a775ba2deb9fcb7, type: 3}
 --- !u!1 &329281728
 GameObject:
   m_ObjectHideFlags: 0
@@ -2716,6 +2773,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1180285271}
   - component: {fileID: 1180285270}
+  - component: {fileID: 1180285272}
   m_Layer: 0
   m_Name: Sun Warm Directional Light
   m_TagString: Untagged
@@ -2803,6 +2861,35 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1180285272
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1180285269}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!1 &1229825095
 GameObject:
   m_ObjectHideFlags: 0
@@ -4861,8 +4948,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -4959,7 +5048,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.64, g: 0.42, b: 0.25, a: 1}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 0.6399999, g: 0.41999996, b: 0.24999997, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -5004,6 +5093,7 @@ MonoBehaviour:
   placedRoot: {fileID: 1017302535}
   previewRoot: {fileID: 655133789}
   autoSaveAfterCommit: 1
+  autoLoadOnStart: 1
 --- !u!4 &2030731243
 Transform:
   m_ObjectHideFlags: 0
@@ -5079,12 +5169,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: SenCity.FurniturePlacement::SenCity.Features.FurniturePlacement.Input.FurniturePlacementInputAdapter
   runtime: {fileID: 0}
   worldCamera: {fileID: 0}
+  interactionRect: {fileID: 0}
   placedFurnitureMask:
     serializedVersion: 2
     m_Bits: 4294967295
   placementPlaneY: 0
-  holdToMoveSeconds: 0.25
   confirmOnMouseRelease: 1
+  tapMoveThresholdPixels: 18
+  cameraPanLimits: {x: 1.2, y: 1.2}
+  minimumFieldOfView: 28
+  maximumFieldOfView: 58
+  mouseWheelZoomSpeed: 0.015
+  pinchZoomSpeed: 0.025
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -5095,3 +5191,4 @@ SceneRoots:
   - {fileID: 2030731243}
   - {fileID: 837069154}
   - {fileID: 1839674997}
+  - {fileID: 299685451}

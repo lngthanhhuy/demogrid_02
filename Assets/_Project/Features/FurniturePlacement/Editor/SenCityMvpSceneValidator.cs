@@ -20,7 +20,7 @@ namespace SenCity.Features.FurniturePlacement.Editor
 
             RequireRoot(scene, "World3D", errors);
             RequireRoot(scene, "EventSystem", errors);
-            GameObject canvas = RequireRoot(scene, "Canvas_UI", errors);
+            GameObject canvas = RequireRoot(scene, "Canvas_MainStudio", errors);
 
             SenCityMvpFlowController flow = canvas != null
                 ? canvas.GetComponent<SenCityMvpFlowController>()
@@ -29,9 +29,9 @@ namespace SenCity.Features.FurniturePlacement.Editor
                 ? canvas.GetComponent<SenCityRoomCameraFocus>()
                 : null;
             if (flow == null)
-                errors.Add("Canvas_UI is missing SenCityMvpFlowController.");
+                errors.Add("Canvas_MainStudio is missing SenCityMvpFlowController.");
             if (cameraFocus == null)
-                errors.Add("Canvas_UI is missing SenCityRoomCameraFocus.");
+                errors.Add("Canvas_MainStudio is missing SenCityRoomCameraFocus.");
 
             if (flow != null)
             {
